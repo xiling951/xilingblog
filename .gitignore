@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# VS Code 本地历史 / Visual Studio 缓存
+.history/
+.vs/
