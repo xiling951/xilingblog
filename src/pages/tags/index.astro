@@ -1,31 +1,46 @@
 ---
+import { Icon } from 'astro-icon/components';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { posts, tagCounts } from '../../utils/posts';
 
-const allPosts = Object.values(import.meta.glob('../posts/*.md', { eager: true }));
-const tags = [...new Set<string>(allPosts.map((post: any) => post.frontmatter.tags).flat())];
-const pageTitle = '标签索引';
+const pageTitle = '标签';
+const maxCount = Math.max(...tagCounts.map((tag) => tag.count), 1);
+const sizeOf = (count: number) => (count >= maxCount ? '1rem' : count > 1 ? '0.9rem' : '0.82rem');
 ---
-<BaseLayout pageTitle={pageTitle}>
-  <div class="tags">
-    {tags.map((tag) => <p class="tag"><a href={`/tags/${tag}`}>{tag}</a></p>)}
+
+<BaseLayout pageTitle={pageTitle} bannerTitle={pageTitle} bannerSubtitle={`共 ${tagCounts.length} 个标签 · ${posts.length} 篇文章`}>
+  <div class="card p-5 md:p-7">
+    <div class="widget-title text-primary">
+      <Icon name="material-symbols:tag-rounded" class="text-[1.3rem]" />
+      全部标签
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+      {
+        tagCounts.map((tag) => (
+          <a
+            href={`/tags/${tag.name}/`}
+            class="chip"
+            style={`font-size:${sizeOf(tag.count)}`}
+          >
+            <Icon name="material-symbols:tag-outline-rounded" class="text-[0.85em]" />
+            {tag.name}
+            <span class="opacity-60">{tag.count}</span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="card mt-4 p-5 md:p-7">
+    <div class="widget-title text-primary">
+      <Icon name="material-symbols:folder-rounded" class="text-[1.3rem]" />
+      按分类浏览
+    </div>
+    <div class="mt-4">
+      <a href="/blog/" class="btn-regular inline-flex items-center gap-1 px-3 py-1.5 text-[0.85rem]">
+        <Icon name="material-symbols:archive-rounded" class="text-[1.05rem]" />
+        去归档页按分类筛选
+      </a>
+    </div>
   </div>
 </BaseLayout>
-<style>
-  a {
-    color: #00539f;
-  }
-
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  .tag {
-    margin: 0.25em;
-    border: dotted 1px #a1a1a1;
-    border-radius: 0.5em;
-    padding: 0.5em 1em;
-    font-size: 1.15em;
-    background-color: #f8fcfd;
-  }
-</style>

@@ -1,5 +1,6 @@
 ---
 layout: ../../layouts/MarkdownPostLayout.astro
+category: 'Astro 学习'
 title: 我的第三篇博客文章
 author: 西岭
 description: "我遇到了一些问题，但是在社区里面提问真的很有帮助！"

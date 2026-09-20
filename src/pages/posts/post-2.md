@@ -1,5 +1,6 @@
 ---
 layout: ../../layouts/MarkdownPostLayout.astro
+category: 'Astro 学习'
 title: 我的第二篇博客文章
 author: 西岭
 description: "学习了一些 Astro 后，我根本停不下来！"

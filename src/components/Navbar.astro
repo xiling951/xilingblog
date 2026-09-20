@@ -1,0 +1,61 @@
+---
+import { Icon } from 'astro-icon/components';
+import { siteConfig } from '../config';
+
+const pathname = Astro.url.pathname;
+const isActive = (url: string) => (url === '/' ? pathname === '/' : pathname.startsWith(url));
+---
+
+<div class="navbar-blur sticky top-0 z-50 border-b border-divider">
+  <div class="mx-auto flex h-14 w-full max-w-(--layout-page-width) items-center gap-2 px-3 md:px-4">
+    <!-- 站点名 -->
+    <a href="/" class="flex shrink-0 items-center gap-2 rounded-lg px-1 py-1">
+      <Icon name="material-symbols:flare-rounded" class="text-[1.6rem] text-primary" />
+      <span class="text-[1.05rem] font-bold tracking-wide">{siteConfig.title}</span>
+    </a>
+
+    <!-- 桌面导航 -->
+    <nav class="ml-3 hidden items-center gap-0.5 md:flex">
+      {
+        siteConfig.nav.map((item) => (
+          <a
+            href={item.url}
+            class:list={[
+              'btn-plain flex items-center gap-1.5 px-3 py-1.5 text-[0.92rem]',
+              isActive(item.url) ? 'bg-btn text-btn-content font-semibold' : 'text-plain',
+            ]}
+            aria-current={isActive(item.url) ? 'page' : undefined}
+          >
+            <Icon name={item.icon} class="text-[1.15rem]" />
+            {item.name}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="ml-auto flex items-center gap-1">
+      <!-- 主题切换（图标随 .dark 切换） -->
+      <button
+        id="theme-toggle"
+        class="btn-icon h-9 w-9 text-plain"
+        type="button"
+        aria-label="切换明暗主题"
+        title="切换明暗主题"
+      >
+        <Icon name="material-symbols:light-mode-rounded" class="text-[1.2rem] dark:hidden" />
+        <Icon name="material-symbols:dark-mode-rounded" class="hidden text-[1.2rem] dark:block" />
+      </button>
+
+      <!-- 移动端菜单 -->
+      <button
+        class="menu-button btn-icon h-9 w-9 text-plain md:hidden"
+        type="button"
+        aria-label="打开菜单"
+        aria-expanded="false"
+        aria-controls="mobile-drawer"
+      >
+        <Icon name="material-symbols:menu-rounded" class="text-[1.35rem]" />
+      </button>
+    </div>
+  </div>
+</div>

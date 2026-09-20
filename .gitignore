@@ -29,3 +29,7 @@ pnpm-debug.log*
 
 # 草稿：不参与构建、不进 git
 drafts/
+
+# 个人原始素材：只留本地，不进仓库
+python课程/
+三月三十日待办.txt

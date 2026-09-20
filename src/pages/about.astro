@@ -1,66 +1,104 @@
 ---
+import { Icon } from 'astro-icon/components';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config';
 
 const pageTitle = '关于我';
 
-// TODO: 下面全是示例数据，改成你自己的即可
 const identity = {
-  firstName: '西岭',
-  country: '中国',
-  occupation: '集成电路设计与集成系统 本科生',
+  name: siteConfig.profile.name,
+  city: '南京',
+  school: '东南大学 · 集成电路设计与集成系统',
   hobbies: ['折腾电路', '跑步', '听昆曲'],
 };
 
-const skills = ['C', 'Python', 'Verilog', 'Cadence Virtuoso', 'MATLAB', 'Astro'];
+const skills = [
+  'C / C++',
+  'Python',
+  'Verilog',
+  'Cadence Virtuoso',
+  'MATLAB',
+  'Linux',
+  'Astro',
+];
 
-const happy = true;
-const finished = false;
-const goal = 3;
-
-const skillColor = 'crimson';
-const fontWeight = 'bold';
-const textCase = 'uppercase';
+const doing = [
+  { icon: 'material-symbols:memory-rounded', text: '数字与模拟集成电路的课程与实验' },
+  { icon: 'material-symbols:science-rounded', text: '跟着学长学姐做器件建模相关的科研训练' },
+  { icon: 'material-symbols:terminal-rounded', text: '整理自己的工具链，把学过的东西写下来' },
+];
 ---
-<BaseLayout pageTitle={pageTitle}>
-  <h2>……和我的新 Astro 网站！</h2>
 
-  <p>我正在学习 Astro 的入门教程。这是我网站上的第二个页面，也是我自己建立的第一个页面！</p>
+<BaseLayout pageTitle={pageTitle} bannerTitle={pageTitle} bannerSubtitle="关于这个站点和我">
+  <div class="flex flex-col gap-4">
+    <section class="card p-5 md:p-7">
+      <h2 class="flex items-center gap-2 text-[1.2rem] font-bold">
+        <Icon name="material-symbols:waving-hand-rounded" class="text-[1.4rem] text-primary" />
+        你好，我是{identity.name}
+      </h2>
+      <p class="mt-3 leading-relaxed text-plain">
+        目前在{identity.school}读书，常驻{identity.city}。这个站点是我的个人角落：把课上学的、自己折腾的、还有没想明白的东西都记下来，
+        一来方便日后翻，二来写下来的过程本身就是在整理思路。
+      </p>
+      <p class="mt-3 leading-relaxed text-plain">
+        爱好是{identity.hobbies[0]}、{identity.hobbies[1]}和{identity.hobbies[2]}——
+        按我妈的说法，{identity.hobbies.length >= 2 ? '前两个好歹算正经事' : '全都算不务正业'}。
+      </p>
+    </section>
 
-  <p>随着我完成更多教程，该站点将更新，所以请继续查看我的旅程将如何进行吧！</p>
+    <section class="card p-5 md:p-7">
+      <h2 class="flex items-center gap-2 text-[1.2rem] font-bold">
+        <Icon name="material-symbols:build-rounded" class="text-[1.4rem] text-primary" />
+        会一点的东西
+      </h2>
+      <div class="mt-3 flex flex-wrap gap-2">
+        {skills.map((skill) => <span class="chip">{skill}</span>)}
+      </div>
+      <p class="mt-3 text-[0.85rem] text-meta">
+        都在学，谈不上精通；写在这里主要是提醒自己还欠着多少东西要补。
+      </p>
+    </section>
 
-  <p>以下是关于我的几个事实：</p>
-  <ul>
-    <li>我的名字是{identity.firstName}。</li>
-    <li>我住在{identity.country}，目前的身份是{identity.occupation}。</li>
-    {
-      identity.hobbies.length >= 2 && (
-        <li>
-          我的两个爱好：{identity.hobbies[0]}和{identity.hobbies[1]}
+    <section class="card p-5 md:p-7">
+      <h2 class="flex items-center gap-2 text-[1.2rem] font-bold">
+        <Icon name="material-symbols:target-rounded" class="text-[1.4rem] text-primary" />
+        最近在做
+      </h2>
+      <ul class="mt-3 flex flex-col gap-2">
+        {
+          doing.map((item) => (
+            <li class="flex items-start gap-2 text-[0.9rem] text-plain">
+              <Icon name={item.icon} class="mt-0.5 shrink-0 text-[1.15rem] text-btn-content" />
+              {item.text}
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="card p-5 md:p-7">
+      <h2 class="flex items-center gap-2 text-[1.2rem] font-bold">
+        <Icon name="material-symbols:info-rounded" class="text-[1.4rem] text-primary" />
+        这个站点
+      </h2>
+      <ul class="mt-3 flex flex-col gap-2 text-[0.9rem] text-plain">
+        <li class="flex items-start gap-2">
+          <Icon name="material-symbols:check-circle-rounded" class="mt-0.5 shrink-0 text-[1.15rem] text-btn-content" />
+          用 Astro 搭建，按官方中文教程（页面 / 组件 / 布局 / 标签 / RSS）一步步做出来的。
         </li>
-      )
-    }
-  </ul>
-
-  <p>我的技能：</p>
-  <ul>
-    {skills.map((skill) => <li class="skill">{skill}</li>)}
-  </ul>
-
-  {happy && <p>我非常乐意学习 Astro！</p>}
-
-  {finished && <p>我完成了这节教程！</p>}
-
-  {goal === 3 ? <p>我的目标是在三天内完成。</p> : <p>我的目标不是 3 天。</p>}
-
-  <style is:global define:vars={{ skillColor, fontWeight, textCase }}>
-    h1 {
-      color: purple;
-      font-size: 4rem;
-    }
-    .skill {
-      color: var(--skillColor);
-      font-weight: var(--fontWeight);
-      text-transform: var(--textCase);
-    }
-  </style>
+        <li class="flex items-start gap-2">
+          <Icon name="material-symbols:check-circle-rounded" class="mt-0.5 shrink-0 text-[1.15rem] text-btn-content" />
+          界面风格借鉴了开源主题
+          <a href={siteConfig.footer.credit.url} class="text-btn-content hover:underline" target="_blank" rel="noopener noreferrer">
+            Mizuki
+          </a>
+          （Material Design 3 令牌体系，Apache-2.0）。
+        </li>
+        <li class="flex items-start gap-2">
+          <Icon name="material-symbols:check-circle-rounded" class="mt-0.5 shrink-0 text-[1.15rem] text-btn-content" />
+          文章是 Markdown 写的，扔进 <code class="rounded bg-btn px-1.5 py-0.5 text-[0.85rem]">src/pages/posts/</code> 就会自动出现在归档、标签和 RSS 里。
+        </li>
+      </ul>
+    </section>
+  </div>
 </BaseLayout>

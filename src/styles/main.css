@@ -1,0 +1,358 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   设计令牌（Material Design 3 风格）
+   借鉴自 LyraVoid/Mizuki（Apache-2.0）的令牌体系：
+   整套配色全部由 --hue 一个变量推导，改一个数字就能整站换色。
+   ========================================================================== */
+
+:root {
+  --hue: 240; /* 由 BaseLayout 根据 src/config.ts 的 themeHue 覆盖 */
+  --radius-large: 1rem;
+  --layout-page-width: 90rem;
+  --sidebar-width: 17.5rem;
+  --main-overlap: 3.5rem;
+
+  /* 亮色 */
+  --primary: oklch(0.70 0.14 var(--hue));
+  --primary-deep: oklch(0.55 0.13 var(--hue));
+  --page-bg: oklch(0.95 0.01 var(--hue));
+  --card-bg: oklch(1 0 0);
+  --card-bg-transparent: rgba(255, 255, 255, 0.8);
+  --deep-text: oklch(0.25 0.02 var(--hue));
+  --plain-text: oklch(0.42 0.02 var(--hue));
+  --content-meta: rgba(0, 0, 0, 0.6);
+  --btn-content: oklch(0.55 0.12 var(--hue));
+  --btn-regular-bg: oklch(0.95 0.025 var(--hue));
+  --btn-regular-bg-hover: oklch(0.9 0.05 var(--hue));
+  --btn-regular-bg-active: oklch(0.85 0.08 var(--hue));
+  --btn-plain-bg-hover: oklch(0.95 0.025 var(--hue));
+  --btn-plain-bg-active: oklch(0.98 0.01 var(--hue));
+  --line-divider: rgba(0, 0, 0, 0.08);
+  --line-color: rgba(0, 0, 0, 0.1);
+  --inline-code-bg: var(--btn-regular-bg);
+  --inline-code-color: var(--btn-content);
+  --selection-bg: oklch(0.90 0.05 var(--hue));
+  --codeblock-bg: oklch(0.97 0.005 var(--hue));
+  --codeblock-topbar-bg: oklch(0.94 0.01 var(--hue));
+  --link-underline: oklch(0.93 0.04 var(--hue));
+  --link-hover: oklch(0.95 0.025 var(--hue));
+  --float-panel-bg: oklch(1 0 0);
+  --scrollbar-bg: rgba(0, 0, 0, 0.35);
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.07);
+}
+
+:root.dark {
+  --primary: oklch(0.75 0.14 var(--hue));
+  --primary-deep: oklch(0.72 0.12 var(--hue));
+  --page-bg: oklch(0.16 0.014 var(--hue));
+  --card-bg: oklch(0.23 0.015 var(--hue));
+  --card-bg-transparent: rgba(23, 23, 23, 0.8);
+  --deep-text: oklch(0.95 0.01 var(--hue));
+  --plain-text: oklch(0.82 0.015 var(--hue));
+  --content-meta: rgba(255, 255, 255, 0.6);
+  --btn-content: oklch(0.75 0.1 var(--hue));
+  --btn-regular-bg: oklch(0.33 0.035 var(--hue));
+  --btn-regular-bg-hover: oklch(0.38 0.04 var(--hue));
+  --btn-regular-bg-active: oklch(0.43 0.045 var(--hue));
+  --btn-plain-bg-hover: oklch(0.30 0.035 var(--hue));
+  --btn-plain-bg-active: oklch(0.27 0.025 var(--hue));
+  --line-divider: rgba(255, 255, 255, 0.08);
+  --line-color: rgba(255, 255, 255, 0.1);
+  --selection-bg: oklch(0.40 0.08 var(--hue));
+  --codeblock-bg: oklch(0.17 0.015 var(--hue));
+  --codeblock-topbar-bg: oklch(0.12 0.015 var(--hue));
+  --link-underline: oklch(0.40 0.08 var(--hue));
+  --link-hover: oklch(0.40 0.08 var(--hue));
+  --float-panel-bg: oklch(0.19 0.015 var(--hue));
+  --scrollbar-bg: rgba(255, 255, 255, 0.35);
+  --card-shadow: none;
+  --card-shadow-hover: none;
+}
+
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary-deep);
+  --color-page: var(--page-bg);
+  --color-card: var(--card-bg);
+  --color-deep: var(--deep-text);
+  --color-plain: var(--plain-text);
+  --color-meta: var(--content-meta);
+  --color-line: var(--line-color);
+  --color-divider: var(--line-divider);
+  --color-btn: var(--btn-regular-bg);
+  --color-btn-hover: var(--btn-regular-bg-hover);
+  --color-btn-content: var(--btn-content);
+  --radius-large: 1rem;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1920px;
+}
+
+/* ==========================================================================
+   基础样式
+   ========================================================================== */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--page-bg);
+    color: var(--deep-text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  ::selection {
+    background-color: var(--selection-bg);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-bg);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* ==========================================================================
+   组件
+   ========================================================================== */
+
+/* 卡片 */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--line-divider);
+  border-radius: var(--radius-large);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition: background-color 0.15s ease, border-color 0.2s ease,
+    box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.card-hover:hover {
+  border-color: var(--line-color);
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* 悬浮面板（下拉菜单等） */
+.float-panel {
+  background-color: var(--float-panel-bg);
+  border: 1px solid var(--line-divider);
+  border-radius: var(--radius-large);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* 顶部导航：毛玻璃 */
+.navbar-blur {
+  background-color: var(--card-bg-transparent);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* 按钮：主要 / 常规 / 图标 / 纯文字 */
+.btn-primary {
+  background-color: var(--btn-content);
+  color: var(--card-bg);
+  border-radius: 999px;
+  transition: opacity 0.2s ease;
+}
+.btn-primary:hover {
+  opacity: 0.88;
+}
+
+.btn-regular {
+  background-color: var(--btn-regular-bg);
+  color: var(--btn-content);
+  border-radius: 0.6rem;
+  transition: background-color 0.2s ease;
+}
+.btn-regular:hover {
+  background-color: var(--btn-regular-bg-hover);
+}
+
+.btn-plain {
+  border-radius: 0.6rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.btn-plain:hover {
+  background-color: var(--btn-plain-bg-hover);
+  color: var(--btn-content);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.btn-icon:hover {
+  background-color: var(--btn-regular-bg);
+  color: var(--btn-content);
+}
+
+/* 标签胶囊 */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  border-radius: 999px;
+  background-color: var(--btn-regular-bg);
+  color: var(--btn-content);
+  transition: background-color 0.2s ease;
+}
+.chip:hover {
+  background-color: var(--btn-regular-bg-hover);
+}
+
+/* 侧边栏小标题 */
+.widget-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* Banner：由色相推导的柔和渐变（Mizuki 用的是壁纸图，这里用渐变代替，无需外部图片） */
+.banner-gradient {
+  background:
+    radial-gradient(120% 120% at 12% 0%, oklch(0.92 0.06 var(--hue)) 0%, transparent 55%),
+    radial-gradient(120% 120% at 88% 10%, oklch(0.9 0.08 calc(var(--hue) + 40)) 0%, transparent 60%),
+    linear-gradient(180deg, oklch(0.97 0.02 var(--hue)) 0%, oklch(0.93 0.03 var(--hue)) 100%);
+}
+.dark .banner-gradient {
+  background:
+    radial-gradient(120% 120% at 12% 0%, oklch(0.30 0.06 var(--hue)) 0%, transparent 55%),
+    radial-gradient(120% 120% at 88% 10%, oklch(0.26 0.07 calc(var(--hue) + 40)) 0%, transparent 60%),
+    linear-gradient(180deg, oklch(0.20 0.03 var(--hue)) 0%, oklch(0.16 0.02 var(--hue)) 100%);
+}
+
+/* 入场动画（替代 Mizuki 的 swup 过场） */
+@keyframes onload-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.onload-animation {
+  animation: onload-fade-up 0.4s ease-out both;
+}
+
+/* ==========================================================================
+   正文排版（@tailwindcss/typography 调校）
+   ========================================================================== */
+
+.prose {
+  --tw-prose-body: var(--plain-text);
+  --tw-prose-headings: var(--deep-text);
+  --tw-prose-links: var(--primary-deep);
+  --tw-prose-bold: var(--deep-text);
+  --tw-prose-quotes: var(--plain-text);
+  --tw-prose-quote-borders: var(--primary);
+  --tw-prose-bullets: var(--primary);
+  --tw-prose-hr: var(--line-divider);
+  --tw-prose-th-borders: var(--line-color);
+  --tw-prose-td-borders: var(--line-divider);
+  max-width: none;
+}
+
+.prose :where(h2, h3, h4) {
+  scroll-margin-top: 5rem;
+}
+
+.prose :where(a) {
+  text-decoration-color: var(--link-underline);
+  text-underline-offset: 3px;
+  transition: background-color 0.2s ease, text-decoration-color 0.2s ease;
+  border-radius: 0.25rem;
+}
+.prose :where(a):hover {
+  background-color: var(--link-hover);
+  text-decoration-color: var(--primary);
+}
+
+.prose :where(code):not(:where(pre code)) {
+  background-color: var(--inline-code-bg);
+  color: var(--inline-code-color);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.4rem;
+  font-weight: 500;
+}
+.prose :where(code):not(:where(pre code))::before,
+.prose :where(code):not(:where(pre code))::after {
+  content: none;
+}
+
+.prose :where(pre) {
+  background-color: var(--codeblock-bg) !important;
+  border: 1px solid var(--line-divider);
+  border-radius: 0.8rem;
+}
+
+.prose :where(blockquote) {
+  font-style: normal;
+  background-color: var(--btn-regular-bg);
+  border-radius: 0.6rem;
+  padding: 0.5rem 1rem;
+  border-left-width: 4px;
+}
+
+.prose :where(table) {
+  overflow: hidden;
+  border-radius: 0.6rem;
+  font-size: 0.92rem;
+}
+.prose :where(thead) {
+  background-color: var(--btn-regular-bg);
+}
+.prose :where(img) {
+  border-radius: 0.8rem;
+}
+
+/* 目录 */
+.toc-link {
+  display: block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--content-meta);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.toc-link:hover {
+  background-color: var(--btn-plain-bg-hover);
+  color: var(--btn-content);
+}
+.toc-link.active {
+  background-color: var(--btn-regular-bg);
+  color: var(--btn-content);
+  font-weight: 600;
+}

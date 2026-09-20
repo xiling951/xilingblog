@@ -1,5 +1,6 @@
 ---
 layout: ../../layouts/MarkdownPostLayout.astro
+category: 'Astro 学习'
 title: '我的第一篇博客文章'
 pubDate: 2026-01-29
 description: '这是我 Astro 博客的第一篇文章。'

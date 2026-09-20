@@ -1,5 +1,6 @@
 ---
 layout: ../../layouts/MarkdownPostLayout.astro
+category: '学习笔记'
 title: 'HTML 学习笔记'
 author: '西岭'
 description: '重学 HTML 语法：段落、换行和特殊字符转义。事实证明几天不用就很容易忘。'

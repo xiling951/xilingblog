@@ -1,5 +1,6 @@
 ---
 layout: ../../layouts/MarkdownPostLayout.astro
+category: '学习笔记'
 title: 'Python 学习笔记'
 author: '西岭'
 description: '重学 Python 基本语法时记下的几个点：math 模块、Unicode 与汉字比大小、成员判断和短路运算。'

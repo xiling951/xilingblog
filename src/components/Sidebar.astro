@@ -1,0 +1,80 @@
+---
+import { Icon } from 'astro-icon/components';
+import { siteConfig } from '../config';
+import { tagCounts } from '../utils/posts';
+---
+
+<aside class="flex w-full flex-col gap-4">
+  <!-- 个人卡 -->
+  <div class="card onload-animation p-5 text-center">
+    <div class="mx-auto mb-3 h-24 w-24 overflow-hidden rounded-full border-2 border-divider bg-btn p-2">
+      <img src={siteConfig.profile.avatar} alt={siteConfig.profile.name} class="h-full w-full object-contain" />
+    </div>
+    <div class="text-lg font-bold">{siteConfig.profile.name}</div>
+    <p class="mt-1 text-[0.85rem] leading-relaxed text-meta">{siteConfig.profile.bio}</p>
+    <div class="mt-4 flex justify-center gap-2">
+      {
+        siteConfig.profile.links.map((link) => (
+          <a
+            href={link.url}
+            class="btn-icon h-9 w-9 border border-divider bg-card text-plain"
+            title={link.name}
+            aria-label={link.name}
+            target={link.url.startsWith('http') ? '_blank' : undefined}
+            rel={link.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+          >
+            <Icon name={link.icon} class="text-[1.1rem]" />
+          </a>
+        ))
+      }
+    </div>
+  </div>
+
+  <!-- 公告 -->
+  {
+    siteConfig.announcement && (
+      <div class="card onload-animation p-4">
+        <div class="widget-title text-primary">
+          <Icon name="material-symbols:campaign-rounded" class="text-[1.2rem]" />
+          {siteConfig.announcement.title}
+        </div>
+        <p class="mt-2 text-[0.85rem] leading-relaxed text-meta">{siteConfig.announcement.content}</p>
+        {siteConfig.announcement.link && (
+          <a
+            href={siteConfig.announcement.link.url}
+            class="mt-3 inline-flex items-center gap-1 text-[0.82rem] text-btn-content hover:underline"
+          >
+            {siteConfig.announcement.link.name}
+            <Icon name="material-symbols:arrow-forward-rounded" class="text-[1rem]" />
+          </a>
+        )}
+      </div>
+    )
+  }
+
+  <!-- 标签云 -->
+  <div class="card onload-animation p-4">
+    <div class="widget-title text-primary">
+      <Icon name="material-symbols:tag-rounded" class="text-[1.2rem]" />
+      标签
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2">
+      {
+        tagCounts.map((tag) => (
+          <a href={`/tags/${tag.name}/`} class="chip">
+            <Icon name="material-symbols:tag-outline-rounded" class="text-[0.85rem]" />
+            {tag.name}
+            <span class="opacity-60">{tag.count}</span>
+          </a>
+        ))
+      }
+    </div>
+    <a
+      href="/tags/"
+      class="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-divider py-2 text-[0.82rem] text-btn-content transition-colors hover:bg-btn"
+    >
+      全部标签
+      <Icon name="material-symbols:arrow-forward-rounded" class="text-[1rem]" />
+    </a>
+  </div>
+</aside>

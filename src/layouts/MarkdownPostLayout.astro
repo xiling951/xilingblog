@@ -1,44 +1,165 @@
 ---
+import { Icon } from 'astro-icon/components';
+import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
-const { frontmatter } = Astro.props;
+import { formatDate, posts } from '../utils/posts';
+
+const { frontmatter, headings, url } = Astro.props as {
+  frontmatter: Record<string, any>;
+  headings: MarkdownHeading[];
+  url: string;
+};
+
+const current = posts.find((post) => post.url === url);
+const index = posts.findIndex((post) => post.url === url);
+const newer = index > 0 ? posts[index - 1] : undefined;
+const older = index >= 0 && index < posts.length - 1 ? posts[index + 1] : undefined;
+
+const toc = (headings ?? []).filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
-<BaseLayout pageTitle={frontmatter.title}>
-  <p><em>{frontmatter.description}</em></p>
-  <p>{frontmatter.pubDate.toString().slice(0, 10)}</p>
 
-  <p>作者：{frontmatter.author}</p>
+<BaseLayout
+  pageTitle={frontmatter.title}
+  description={frontmatter.description}
+  bannerTitle={frontmatter.title}
+  bannerSubtitle={frontmatter.description}
+>
+  <article class="card p-5 md:p-7">
+    <header class="border-b border-divider pb-4">
+      <h1 class="text-[1.45rem] font-bold leading-snug md:text-[1.8rem]">{frontmatter.title}</h1>
 
-  {/* 教程里这行是不带判断的；加个判断，让没有配图的文章也能正常渲染 */}
-  {frontmatter.image && <img src={frontmatter.image.url} width="300" alt={frontmatter.image.alt} />}
+      <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.78rem] text-meta">
+        <span class="inline-flex items-center gap-1">
+          <Icon name="material-symbols:calendar-today-rounded" class="text-[1rem]" />
+          {formatDate(new Date(frontmatter.pubDate))}
+        </span>
+        {
+          frontmatter.category && (
+            <span class="inline-flex items-center gap-1">
+              <Icon name="material-symbols:folder-rounded" class="text-[1rem]" />
+              {frontmatter.category}
+            </span>
+          )
+        }
+        {
+          current && (
+            <span class="inline-flex items-center gap-1">
+              <Icon name="material-symbols:schedule-rounded" class="text-[1rem]" />
+              {current.words} 字 · 约 {current.minutes} 分钟
+            </span>
+          )
+        }
+        {
+          frontmatter.author && (
+            <span class="inline-flex items-center gap-1">
+              <Icon name="material-symbols:person-rounded" class="text-[1rem]" />
+              {frontmatter.author}
+            </span>
+          )
+        }
+      </div>
 
-  <div class="tags">
+      {
+        frontmatter.tags?.length > 0 && (
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            {frontmatter.tags.map((tag: string) => (
+              <a href={`/tags/${tag}/`} class="chip">
+                <Icon name="material-symbols:tag-outline-rounded" class="text-[0.8rem]" />
+                {tag}
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </header>
+
+    <div class="prose mt-6 max-w-none">
+      <slot />
+    </div>
+
     {
-      frontmatter.tags.map((tag: string) => (
-        <p class="tag">
-          <a href={`/tags/${tag}`}>{tag}</a>
-        </p>
-      ))
+      frontmatter.image?.url && (
+        <figure class="mt-6">
+          <img
+            src={frontmatter.image.url}
+            alt={frontmatter.image.alt}
+            class="w-full rounded-xl"
+            loading="lazy"
+          />
+        </figure>
+      )
     }
-  </div>
 
-  <slot />
+    <footer class="mt-8 grid gap-3 border-t border-divider pt-4 text-[0.85rem] sm:grid-cols-2">
+      {
+        older ? (
+          <a href={older.url} class="card card-hover flex items-center gap-2 p-3">
+            <Icon name="material-symbols:arrow-back-rounded" class="text-[1.1rem] text-primary" />
+            <span class="min-w-0">
+              <span class="block text-[0.72rem] text-meta">上一篇</span>
+              <span class="block truncate">{older.title}</span>
+            </span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        newer && (
+          <a href={newer.url} class="card card-hover flex items-center justify-end gap-2 p-3 text-right">
+            <span class="min-w-0">
+              <span class="block text-[0.72rem] text-meta">下一篇</span>
+              <span class="block truncate">{newer.title}</span>
+            </span>
+            <Icon name="material-symbols:arrow-forward-rounded" class="text-[1.1rem] text-primary" />
+          </a>
+        )
+      }
+    </footer>
+  </article>
+
+  <Fragment slot="right">
+    {
+      toc.length > 0 && (
+        <div class="card mb-4 p-4">
+          <div class="widget-title text-primary">
+            <Icon name="material-symbols:toc-rounded" class="text-[1.2rem]" />
+            目录
+          </div>
+          <nav class="mt-3 flex flex-col gap-0.5" id="toc">
+            {toc.map((heading) => (
+              <a
+                href={`#${heading.slug}`}
+                class="toc-link"
+                style={`padding-left:${(heading.depth - 2) * 0.75 + 0.5}rem`}
+              >
+                {heading.text}
+              </a>
+            ))}
+          </nav>
+        </div>
+      )
+    }
+  </Fragment>
 </BaseLayout>
-<style>
-  a {
-    color: #00539f;
-  }
 
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-  }
+<script>
+  // 目录滚动高亮
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('#toc .toc-link'));
+  const targets = links
+    .map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1))))
+    .filter((el): el is HTMLElement => Boolean(el));
 
-  .tag {
-    margin: 0.25em;
-    border: dotted 1px #a1a1a1;
-    border-radius: 0.5em;
-    padding: 0.5em 1em;
-    font-size: 1.15em;
-    background-color: #f8fcfd;
+  if (targets.length > 0) {
+    const highlight = () => {
+      const offset = 96;
+      let activeIndex = 0;
+      targets.forEach((target, index) => {
+        if (target.getBoundingClientRect().top <= offset) activeIndex = index;
+      });
+      links.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
+    };
+    highlight();
+    document.addEventListener('scroll', highlight, { passive: true });
   }
-</style>
+</script>

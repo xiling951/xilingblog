@@ -1,26 +1,170 @@
 ---
-import Header from '../components/Header.astro';
+import { Icon } from 'astro-icon/components';
 import Footer from '../components/Footer.astro';
-import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import RightSidebar from '../components/RightSidebar.astro';
+import Sidebar from '../components/Sidebar.astro';
+import { siteConfig } from '../config';
+import '../styles/main.css';
 
-const { pageTitle } = Astro.props;
+interface Props {
+  pageTitle?: string;
+  description?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  /** 首页：更高的 banner + 居中大标题 */
+  home?: boolean;
+  /** 是否显示右侧边栏（文章页会往里面塞目录） */
+  showRightSidebar?: boolean;
+}
+
+const {
+  pageTitle,
+  description = siteConfig.description,
+  bannerTitle,
+  bannerSubtitle,
+  home = false,
+  showRightSidebar = true,
+} = Astro.props;
+
+const fullTitle = pageTitle ? `${pageTitle} | ${siteConfig.titleSuffix}` : siteConfig.titleSuffix;
+const bannerHeight = home ? siteConfig.banner.homeHeight : siteConfig.banner.pageHeight;
+const showBigTitle = home && siteConfig.banner.showTitle;
 ---
-<html lang="zh-cn">
+
+<!doctype html>
+<html lang={siteConfig.lang} style={`--hue:${siteConfig.themeHue}`}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={siteConfig.author} />
+    <title>{fullTitle}</title>
+
+    <!-- 预涂主题，避免亮/暗切换时的闪烁 -->
+    <script is:inline define:vars={{ defaultTheme: siteConfig.defaultTheme }}>
+      (() => {
+        try {
+          const stored = localStorage.getItem('theme');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const dark = stored
+            ? stored === 'dark'
+            : defaultTheme === 'dark' || (defaultTheme === 'auto' && prefersDark);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {
+          /* 忽略 */
+        }
+      })();
+    </script>
   </head>
-  <body>
-    <Header />
-    <h1>{pageTitle}</h1>
-    <slot />
-    <Footer />
+
+  <body class="min-h-screen">
+    <Navbar />
+
+    <!-- Banner -->
+    <div class="banner banner-gradient relative w-full" style={`--banner-h:${bannerHeight}vh`}>
+      {
+        showBigTitle && (
+          <div class="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+            <h1 class="text-[2rem] font-bold tracking-wide md:text-[3rem]">
+              {bannerTitle ?? siteConfig.title}
+            </h1>
+            <p class="mt-3 max-w-2xl text-[0.9rem] leading-relaxed text-plain md:text-[1rem]">
+              {bannerSubtitle ?? siteConfig.subtitle}
+            </p>
+          </div>
+        )
+      }
+      {
+        !showBigTitle && (
+          <div class="absolute inset-0 hidden flex-col items-center justify-center px-6 text-center md:flex">
+            <h1 class="text-[1.6rem] font-bold md:text-[2.2rem]">
+              {bannerTitle ?? pageTitle ?? siteConfig.title}
+            </h1>
+            {bannerSubtitle && <p class="mt-2 text-[0.9rem] text-plain">{bannerSubtitle}</p>}
+          </div>
+        )
+      }
+    </div>
+
+    <!-- 三栏栅格：左（个人/公告/标签）· 中（内容）· 右（统计/日历/分类 + 目录） -->
+    <div class="relative z-30 mx-auto w-full max-w-(--layout-page-width) px-2 md:px-4">
+      <div
+        class="grid grid-cols-1 gap-4 md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)_var(--sidebar-width)]"
+      >
+        <div class="hidden md:block">
+          <div class="sticky top-[4.5rem]">
+            <Sidebar />
+          </div>
+        </div>
+
+        <main class="min-w-0">
+          <div class="onload-animation">
+            <slot />
+          </div>
+          <Footer />
+        </main>
+
+        {
+          showRightSidebar && (
+            <div class="hidden lg:block">
+              <div class="sticky top-[4.5rem]">
+                <slot name="right" />
+                <RightSidebar />
+              </div>
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- 手机端抽屉 -->
+    <div id="mobile-drawer" class="fixed inset-0 z-40 hidden md:hidden">
+      <button type="button" class="drawer-backdrop absolute inset-0 w-full bg-black/40" aria-label="关闭菜单"></button>
+      <div class="absolute right-0 top-0 h-full w-72 overflow-y-auto bg-page p-3 shadow-2xl">
+        <nav class="card p-2">
+          {
+            siteConfig.nav.map((item) => (
+              <a href={item.url} class="btn-plain flex items-center gap-2 px-3 py-2 text-[0.92rem]">
+                <Icon name={item.icon} class="text-[1.15rem]" />
+                {item.name}
+              </a>
+            ))
+          }
+        </nav>
+        <div class="mt-3">
+          <Sidebar />
+        </div>
+      </div>
+    </div>
+
     <script>
+      import '../scripts/theme.js';
       import '../scripts/menu.js';
     </script>
+
+    <style>
+      .banner {
+        height: var(--banner-h);
+        min-height: 12rem;
+      }
+      /* 手机端 banner 收窄一点，给内容让位 */
+      @media (max-width: 767px) {
+        .banner {
+          height: calc(var(--banner-h) * 0.62);
+          min-height: 9rem;
+        }
+      }
+      /* 主体上移，与 banner 轻微重叠（Mizuki 的 --main-overlap 做法） */
+      .banner + div {
+        margin-top: calc(-1 * var(--main-overlap));
+      }
+      .drawer-backdrop {
+        cursor: default;
+      }
+    </style>
   </body>
 </html>

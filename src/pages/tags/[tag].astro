@@ -1,27 +1,30 @@
 ---
+import { Icon } from 'astro-icon/components';
+import PostList from '../../components/PostList.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import BlogPost from '../../components/BlogPost.astro';
+import { posts, tagCounts } from '../../utils/posts';
 
 export async function getStaticPaths() {
-  const allPosts = Object.values(import.meta.glob('../posts/*.md', { eager: true }));
-
-  const uniqueTags = [...new Set<string>(allPosts.map((post: any) => post.frontmatter.tags).flat())];
-
-  return uniqueTags.map((tag: string) => {
-    const filteredPosts = allPosts.filter((post: any) => post.frontmatter.tags.includes(tag));
-    return {
-      params: { tag },
-      props: { posts: filteredPosts },
-    };
-  });
+  return tagCounts.map((tag) => ({
+    params: { tag: tag.name },
+    props: { tagPosts: posts.filter((post) => post.tags.includes(tag.name)) },
+  }));
 }
 
 const { tag } = Astro.params;
-const { posts } = Astro.props;
+const { tagPosts } = Astro.props;
 ---
-<BaseLayout pageTitle={tag}>
-  <p>包含「{tag}」标签的文章</p>
-  <ul>
-    {posts.map((post: any) => <BlogPost url={post.url} title={post.frontmatter.title} />)}
-  </ul>
+
+<BaseLayout pageTitle={`标签：${tag}`} bannerTitle={`#${tag}`} bannerSubtitle={`共 ${tagPosts.length} 篇文章`}>
+  <div class="card mb-4 flex items-center gap-2 p-4">
+    <Icon name="material-symbols:tag-rounded" class="text-[1.3rem] text-primary" />
+    <span class="text-[0.95rem]">
+      包含「<span class="font-semibold text-btn-content">{tag}</span>」标签的文章
+    </span>
+    <a href="/tags/" class="btn-plain ml-auto px-3 py-1.5 text-[0.8rem] text-btn-content">
+      全部标签
+    </a>
+  </div>
+
+  <PostList posts={tagPosts} showFilter={false} />
 </BaseLayout>

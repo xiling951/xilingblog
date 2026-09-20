@@ -1,17 +1,41 @@
 ---
-import Social from './Social.astro';
----
-<style>
-  footer {
-    display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-</style>
+import { Icon } from 'astro-icon/components';
+import { siteConfig } from '../config';
 
-<footer>
-  <!-- TODO: 后两个是教程占位，换成你自己的账号（Social 会拼成 https://www.<platform>.com/<username>） -->
-  <Social platform="github" username="xiling951" />
-  <Social platform="twitter" username="astrodotbuild" />
-  <Social platform="youtube" username="astrodotbuild" />
+const year = new Date().getFullYear();
+---
+
+<footer class="pb-6 pt-4">
+  <div class="card flex flex-col items-center gap-2 px-4 py-5 text-center text-[0.8rem] text-meta">
+    <div class="flex items-center gap-2">
+      {
+        siteConfig.profile.links.map((link) => (
+          <a
+            href={link.url}
+            class="btn-icon h-8 w-8"
+            title={link.name}
+            aria-label={link.name}
+            target={link.url.startsWith('http') ? '_blank' : undefined}
+            rel={link.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+          >
+            <Icon name={link.icon} class="text-[1rem]" />
+          </a>
+        ))
+      }
+    </div>
+    <div>
+      © {year} {siteConfig.footer.copyright} · 内容采用
+      <a href={siteConfig.footer.license.url} class="text-btn-content hover:underline" target="_blank" rel="noopener noreferrer">
+        {siteConfig.footer.license.name}
+      </a>
+      许可协议
+    </div>
+    <div class="flex items-center gap-1 text-[0.75rem] opacity-80">
+      <Icon name="material-symbols:palette-outline" class="text-[0.95rem]" />
+      <a href={siteConfig.footer.credit.url} class="hover:underline" target="_blank" rel="noopener noreferrer">
+        {siteConfig.footer.credit.text}
+      </a>
+      <span>（Apache-2.0）· 由 Astro 驱动</span>
+    </div>
+  </div>
 </footer>

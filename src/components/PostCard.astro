@@ -1,0 +1,72 @@
+---
+import { Icon } from 'astro-icon/components';
+import { formatDate, type Post } from '../utils/posts';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+---
+
+<a
+  href={post.url}
+  class="card card-hover group flex gap-3 p-3 md:gap-4 md:p-4"
+  data-category={post.category}
+>
+  <div class="flex min-w-0 flex-1 flex-col">
+    <div class="flex items-center gap-2">
+      <Icon name="material-symbols:article-outline-rounded" class="shrink-0 text-[1.15rem] text-primary" />
+      <h3 class="truncate text-[1.02rem] font-bold transition-colors group-hover:text-primary">
+        {post.title}
+      </h3>
+    </div>
+
+    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem] text-meta">
+      <span class="inline-flex items-center gap-1">
+        <Icon name="material-symbols:calendar-today-rounded" class="text-[0.95rem]" />
+        {formatDate(post.pubDate)}
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <Icon name="material-symbols:folder-rounded" class="text-[0.95rem]" />
+        {post.category}
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <Icon name="material-symbols:schedule-rounded" class="text-[0.95rem]" />
+        {post.words} 字 · {post.minutes} 分钟
+      </span>
+    </div>
+
+    {
+      post.description && (
+        <p class="mt-2 line-clamp-2 text-[0.85rem] leading-relaxed text-plain">{post.description}</p>
+      )
+    }
+
+    {
+      post.tags.length > 0 && (
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          {post.tags.map((tag) => (
+            <span class="chip">
+              <Icon name="material-symbols:tag-outline-rounded" class="text-[0.8rem]" />
+              {tag}
+            </span>
+          ))}
+        </div>
+      )
+    }
+  </div>
+
+  {
+    post.image?.url && (
+      <div class="hidden h-24 w-32 shrink-0 overflow-hidden rounded-xl sm:block">
+        <img
+          src={post.image.url}
+          alt={post.image.alt}
+          loading="lazy"
+          class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+    )
+  }
+</a>
