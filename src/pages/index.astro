@@ -1,11 +1,9 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const pageTitle = '我的Astro站点';
 ---
-
-<Layout>
-	<Welcome />
-</Layout>
+<BaseLayout pageTitle={pageTitle}>
+  <h2>我超棒的博客副标题</h2>
+  <p>欢迎来到我的博客！这里会记录我的课程笔记、学习日记，以及一些折腾记录。</p>
+</BaseLayout>

@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BlogPost from '../components/BlogPost.astro';
+
+// 教程写法：Object.values(import.meta.glob('./posts/*.md', { eager: true }))
+// 这里额外按发布日期倒序排列（教程没写，但文章多了以后更好用）
+const allPosts = Object.values(import.meta.glob('./posts/*.md', { eager: true })).sort(
+  (a: any, b: any) =>
+    new Date(b.frontmatter.pubDate).valueOf() - new Date(a.frontmatter.pubDate).valueOf()
+);
+
+const pageTitle = '我的学习博客';
+---
+<BaseLayout pageTitle={pageTitle}>
+  <p>在这里，我将分享我的 Astro 学习之旅。</p>
+  <ul>
+    {allPosts.map((post: any) => <BlogPost url={post.url} title={post.frontmatter.title} />)}
+  </ul>
+</BaseLayout>
