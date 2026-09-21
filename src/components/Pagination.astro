@@ -31,6 +31,8 @@ for (let page = 1; page <= lastPage; page += 1) {
         class:list={['page-link', currentPage === 1 && 'disabled']}
         href={href(Math.max(1, currentPage - 1))}
         aria-label="上一页"
+        aria-disabled={currentPage === 1 ? 'true' : undefined}
+        tabindex={currentPage === 1 ? -1 : undefined}
       >
         上一页
       </a>
@@ -51,6 +53,8 @@ for (let page = 1; page <= lastPage; page += 1) {
         class:list={['page-link', currentPage === lastPage && 'disabled']}
         href={href(Math.min(lastPage, currentPage + 1))}
         aria-label="下一页"
+        aria-disabled={currentPage === lastPage ? 'true' : undefined}
+        tabindex={currentPage === lastPage ? -1 : undefined}
       >
         下一页
       </a>

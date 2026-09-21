@@ -70,6 +70,23 @@ for (const file of postPages) {
   if (!match) problems.push(`文章页缺少字数信息: ${relative(DIST, file)}`);
   else if (Number(match[1]) === 0) problems.push(`文章页字数为 0（字数统计失效）: ${relative(DIST, file)}`);
 }
+// 构建产物里不允许残留 Vite 未替换的占位符（曾导致线上搜索整体失效）
+const assetFiles = [];
+(function walkAssets(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== 'pagefind') walkAssets(full);
+    } else if (/\.(js|mjs|css|html)$/.test(entry.name)) {
+      assetFiles.push(full);
+    }
+  }
+})(DIST);
+for (const file of assetFiles) {
+  if (readFileSync(file, 'utf8').includes('__VITE_PRELOAD__')) {
+    problems.push(`构建产物残留 Vite 占位符 __VITE_PRELOAD__: ${relative(DIST, file)}`);
+  }
+}
 if (existsSync(join(DIST, 'rss.xml'))) {
   const rss = readFileSync(join(DIST, 'rss.xml'), 'utf8');
   if (rss.includes('xilingblog/xilingblog')) problems.push('rss.xml 里 base 被重复拼接');

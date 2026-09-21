@@ -18,6 +18,7 @@ const { categoryPosts } = Astro.props;
 
 <BaseLayout
   pageTitle={`分类：${category}`}
+  description={`分类「${category}」下的文章，共 ${categoryPosts.length} 篇。`}
   bannerTitle={category}
   bannerSubtitle={`共 ${categoryPosts.length} 篇文章`}
 >

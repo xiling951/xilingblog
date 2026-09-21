@@ -16,7 +16,12 @@ const { tag } = Astro.params;
 const { tagPosts } = Astro.props;
 ---
 
-<BaseLayout pageTitle={`标签：${tag}`} bannerTitle={`#${tag}`} bannerSubtitle={`共 ${tagPosts.length} 篇文章`}>
+<BaseLayout
+  pageTitle={`标签：${tag}`}
+  description={`标签「${tag}」下的文章，共 ${tagPosts.length} 篇。`}
+  bannerTitle={`#${tag}`}
+  bannerSubtitle={`共 ${tagPosts.length} 篇文章`}
+>
   <div class="card mb-4 flex items-center gap-2 p-4">
     <Icon name="material-symbols:tag-rounded" class="text-[1.3rem] text-primary" />
     <span class="text-[0.95rem]">

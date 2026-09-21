@@ -27,6 +27,7 @@ const related = current ? relatedPosts(current, 3) : [];
   description={frontmatter.description}
   bannerTitle={frontmatter.title}
   bannerSubtitle={frontmatter.description}
+  type="article"
 >
   <article class="card p-5 md:p-7" data-pagefind-body>
     <header class="border-b border-divider pb-4">
@@ -115,8 +116,10 @@ const related = current ? relatedPosts(current, 3) : [];
       frontmatter.image?.url && (
         <figure class="mt-6">
           <img
-            src={frontmatter.image.url}
+            src={withBase(frontmatter.image.url)}
             alt={frontmatter.image.alt}
+            width="1200"
+            height="800"
             class="w-full rounded-xl"
             loading="lazy"
           />

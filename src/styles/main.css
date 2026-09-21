@@ -25,7 +25,7 @@
   --deep-text: oklch(0.25 0.02 var(--hue));
   --plain-text: oklch(0.42 0.02 var(--hue));
   --content-meta: rgba(0, 0, 0, 0.6);
-  --btn-content: oklch(0.55 0.12 var(--hue));
+  --btn-content: oklch(0.50 0.13 var(--hue));
   --btn-regular-bg: oklch(0.95 0.025 var(--hue));
   --btn-regular-bg-hover: oklch(0.9 0.05 var(--hue));
   --btn-regular-bg-active: oklch(0.85 0.08 var(--hue));
@@ -78,7 +78,7 @@
   --font-sans: ui-sans-serif, system-ui, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans SC", sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji";
-  --color-primary: var(--primary);
+  --color-primary: var(--primary-deep);
   --color-primary-deep: var(--primary-deep);
   --color-page: var(--page-bg);
   --color-card: var(--card-bg);
@@ -155,12 +155,6 @@
 }
 
 /* 悬浮面板（下拉菜单等） */
-.float-panel {
-  background-color: var(--float-panel-bg);
-  border: 1px solid var(--line-divider);
-  border-radius: var(--radius-large);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-}
 
 /* 顶部导航：毛玻璃 */
 .navbar-blur {
@@ -170,15 +164,6 @@
 }
 
 /* 按钮：主要 / 常规 / 图标 / 纯文字 */
-.btn-primary {
-  background-color: var(--btn-content);
-  color: var(--card-bg);
-  border-radius: 999px;
-  transition: opacity 0.2s ease;
-}
-.btn-primary:hover {
-  opacity: 0.88;
-}
 
 .btn-regular {
   background-color: var(--btn-regular-bg);
@@ -387,12 +372,7 @@ html.wallpaper .wallpaper-layer {  opacity: 1; }
 html.wallpaper { background-color: transparent; }
 html.wallpaper .card,
 html.wallpaper .navbar-blur,
-html.wallpaper .float-panel {
-  background-color: var(--card-bg-transparent);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
-}
-
+html.wallpaper 
 /* ===== 分页 ===== */
 .page-link {
   display: inline-flex;
@@ -466,7 +446,6 @@ html.wallpaper .float-panel {
 .search-result mark { background-color: var(--selection-bg); color: inherit; border-radius: 0.2rem; padding: 0 0.1rem; }
 
 /* ===== 评论区 ===== */
-.comments-wrap { margin-top: 1rem; }
 
 html.wallpaper body { background-color: transparent; }
 
@@ -490,7 +469,22 @@ html.wallpaper body { background-color: transparent; }
 
 /* ===== 键盘焦点可见（无障碍） ===== */
 a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--primary-deep);
   outline-offset: 2px;
   border-radius: 0.5rem;
 }
+
+/* ===== 跳到正文（键盘/读屏） ===== */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--line-color);
+  color: var(--primary-deep);
+  font-size: 0.85rem;
+}
+.skip-link:focus { left: 1rem; }

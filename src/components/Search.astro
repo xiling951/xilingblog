@@ -48,7 +48,10 @@ import { Icon } from 'astro-icon/components';
     if (pagefind) return pagefind;
     if (!loading) {
       // Pagefind 索引只在 `npm run build` 之后存在于 dist/pagefind/
-      loading = import(/* @vite-ignore */ `${base}pagefind/pagefind.js`)
+      // 注意：不能直接写 import(...) —— Vite 会把它包一层并留下未替换的 __VITE_PRELOAD__ 占位符，
+      // 构建产物里会抛 ReferenceError（线上搜索曾因此完全失效）。用 new Function 拿到原生 import。
+      const nativeImport = new Function('url', 'return import(url)');
+      loading = nativeImport(`${base}pagefind/pagefind.js`)
         .then(async (mod) => {
           await mod.options({ baseUrl: base });
           await mod.init();

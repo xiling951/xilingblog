@@ -1,6 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig } from '../../config';
 import { posts, tagCounts } from '../../utils/posts';
 import { withBase } from '../../utils/url';
 
@@ -9,7 +10,12 @@ const maxCount = Math.max(...tagCounts.map((tag) => tag.count), 1);
 const sizeOf = (count: number) => (count >= maxCount ? '1rem' : count > 1 ? '0.9rem' : '0.82rem');
 ---
 
-<BaseLayout pageTitle={pageTitle} bannerTitle={pageTitle} bannerSubtitle={`共 ${tagCounts.length} 个标签 · ${posts.length} 篇文章`}>
+<BaseLayout
+  pageTitle={pageTitle}
+  description={`${siteConfig.title} 的全部标签，共 ${tagCounts.length} 个。`}
+  bannerTitle={pageTitle}
+  bannerSubtitle={`共 ${tagCounts.length} 个标签 · ${posts.length} 篇文章`}
+>
   <div class="card p-5 md:p-7">
     <div class="widget-title text-primary">
       <Icon name="material-symbols:tag-rounded" class="text-[1.3rem]" />

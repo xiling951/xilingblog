@@ -5,7 +5,7 @@ title: 我的第三篇博客文章
 author: 西岭
 description: "我遇到了一些问题，但是在社区里面提问真的很有帮助！"
 image:
-  url: "https://docs.astro.build/assets/rays.webp"
+  url: '/covers/post-3.png'
   alt: "深色背景上带彩虹射线的 Astro 标志。"
 pubDate: 2026-03-02
 tags: ["astro", "learning in public", "setbacks", "community"]

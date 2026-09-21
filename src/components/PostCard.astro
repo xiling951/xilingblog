@@ -62,7 +62,7 @@ const { post } = Astro.props;
     post.image?.url && (
       <div class="hidden h-24 w-32 shrink-0 overflow-hidden rounded-xl sm:block">
         <img
-          src={post.image.url}
+          src={withBase(post.image.url)}
           alt={post.image.alt}
           width="128"
           height="96"

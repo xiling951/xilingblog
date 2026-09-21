@@ -23,6 +23,7 @@ const pageTitle = page.currentPage === 1 ? '归档' : `归档 · 第 ${page.curr
 <BaseLayout
   pageTitle={pageTitle}
   bannerTitle="归档"
+  description={`${siteConfig.title} 的归档：共 ${posts.length} 篇文章，第 ${page.currentPage} 页。`}
   bannerSubtitle={`共 ${posts.length} 篇文章 · 第 ${page.currentPage} / ${page.lastPage} 页`}
   prevUrl={prevUrl}
   nextUrl={nextUrl}

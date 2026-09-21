@@ -7,7 +7,12 @@ import { withBase } from '../../utils/url';
 const pageTitle = '分类';
 ---
 
-<BaseLayout pageTitle={pageTitle} bannerTitle={pageTitle} bannerSubtitle={`共 ${categories.length} 个分类`}>
+<BaseLayout
+  pageTitle={pageTitle}
+  description={`全部文章分类，共 ${categories.length} 个。`}
+  bannerTitle={pageTitle}
+  bannerSubtitle={`共 ${categories.length} 个分类`}
+>
   <div class="card p-5 md:p-7">
     <div class="widget-title text-primary">
       <Icon name="material-symbols:folder-rounded" class="text-[1.3rem]" />

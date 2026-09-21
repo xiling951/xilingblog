@@ -11,7 +11,9 @@ export async function GET(context) {
     title: `${siteConfig.title} | 博客`,
     description: siteConfig.description,
     site: siteWithBase,
-    items: await pagesGlobToRssItems(import.meta.glob('./**/*.md')),
+    items: (await pagesGlobToRssItems(import.meta.glob('./**/*.md'))).sort(
+      (a, b) => new Date(b.pubDate).valueOf() - new Date(a.pubDate).valueOf()
+    ),
     customData: `<language>zh-cn</language>`,
   });
 }

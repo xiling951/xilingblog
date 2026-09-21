@@ -19,6 +19,8 @@ interface Props {
   home?: boolean;
   /** 是否显示右侧边栏（文章页会往里面塞目录） */
   showRightSidebar?: boolean;
+  /** og:type（文章页传 article） */
+  type?: 'website' | 'article';
   /** 分页页面的上一页/下一页（会输出 rel=prev/next） */
   prevUrl?: string;
   nextUrl?: string;
@@ -30,13 +32,15 @@ const {
   bannerTitle,
   bannerSubtitle,
   home = false,
+  type = 'website',
   showRightSidebar = true,
   prevUrl,
   nextUrl,
 } = Astro.props;
 
 const fullTitle = pageTitle ? `${pageTitle} | ${siteConfig.titleSuffix}` : siteConfig.titleSuffix;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
+const canonicalPath = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const canonicalURL = new URL(canonicalPath, Astro.site ?? Astro.url);
 const ogImage = new URL(withBase('/og.png'), Astro.site ?? Astro.url).toString();
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -75,7 +79,7 @@ const showBigTitle = home && siteConfig.banner.showTitle;
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14181f" />
 
     <!-- Open Graph / Twitter 分享卡片 -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={type} />
     <meta property="og:site_name" content={siteConfig.title} />
     <meta property="og:locale" content="zh_CN" />
     <meta property="og:title" content={fullTitle} />
@@ -110,6 +114,7 @@ const showBigTitle = home && siteConfig.banner.showTitle;
   </head>
 
   <body class="min-h-screen">
+    <a href="#main" class="skip-link">跳到正文</a>
     <!-- 壁纸模式的背景层（默认透明，开启后淡入） -->
     <div class="wallpaper-layer" aria-hidden="true"></div>
 
@@ -132,9 +137,9 @@ const showBigTitle = home && siteConfig.banner.showTitle;
       {
         !showBigTitle && (
           <div class="absolute inset-0 hidden flex-col items-center justify-center px-6 text-center md:flex">
-            <h1 class="text-[1.6rem] font-bold md:text-[2.2rem]">
+            <div class="text-[1.6rem] font-bold md:text-[2.2rem]">
               {bannerTitle ?? pageTitle ?? siteConfig.title}
-            </h1>
+            </div>
             {bannerSubtitle && <p class="mt-2 text-[0.9rem] text-plain">{bannerSubtitle}</p>}
           </div>
         )
@@ -152,7 +157,7 @@ const showBigTitle = home && siteConfig.banner.showTitle;
           </div>
         </div>
 
-        <main class="min-w-0">
+        <main id="main" class="min-w-0">
           <div class="onload-animation">
             <slot />
           </div>
@@ -173,7 +178,7 @@ const showBigTitle = home && siteConfig.banner.showTitle;
     </div>
 
     <!-- 手机端抽屉 -->
-    <div id="mobile-drawer" class="fixed inset-0 z-40 hidden md:hidden">
+    <div id="mobile-drawer" class="fixed inset-0 z-40 hidden md:hidden" role="dialog" aria-modal="true" aria-label="站点菜单">
       <button type="button" class="drawer-backdrop absolute inset-0 w-full bg-black/40" aria-label="关闭菜单"></button>
       <div class="absolute right-0 top-0 h-full w-72 overflow-y-auto bg-page p-3 shadow-2xl">
         <nav class="card p-2">

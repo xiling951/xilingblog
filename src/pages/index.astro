@@ -2,10 +2,11 @@
 import { Icon } from 'astro-icon/components';
 import PostList from '../components/PostList.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config';
 import { posts } from '../utils/posts';
 import { withBase } from '../utils/url';
 
-const latest = posts.slice(0, 6);
+const latest = posts.slice(0, siteConfig.latestPosts);
 ---
 
 <BaseLayout home>

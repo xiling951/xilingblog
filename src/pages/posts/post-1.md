@@ -6,7 +6,7 @@ pubDate: 2026-01-29
 description: '这是我 Astro 博客的第一篇文章。'
 author: '西岭'
 image:
-  url: 'https://docs.astro.build/assets/rose.webp'
+  url: '/covers/post-1.png'
   alt: '深色背景上带粉色光晕的 Astro 标志。'
 tags: ['astro', 'blogging', 'learning in public']
 ---

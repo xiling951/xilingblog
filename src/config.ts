@@ -33,6 +33,8 @@ export const siteConfig = {
   },
   /** 归档每页文章数（分页用） */
   postsPerPage: 10,
+  /** 首页显示的最新文章数 */
+  latestPosts: 6,
   /** 顶部导航 */
   nav: [
     { name: '首页', url: '/', icon: 'material-symbols:home-rounded' },

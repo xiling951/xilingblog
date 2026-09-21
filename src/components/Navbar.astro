@@ -14,7 +14,7 @@ const isActive = (url: string) => {
 <div class="navbar-blur sticky top-0 z-50 border-b border-divider">
   <div class="mx-auto flex h-14 w-full max-w-(--layout-page-width) items-center gap-2 px-3 md:px-4">
     <!-- 站点名 -->
-    <a href="/" class="flex shrink-0 items-center gap-2 rounded-lg px-1 py-1">
+    <a href={withBase('/')} class="flex shrink-0 items-center gap-2 rounded-lg px-1 py-1">
       <Icon name="material-symbols:flare-rounded" class="text-[1.6rem] text-primary" />
       <span class="text-[1.05rem] font-bold tracking-wide">{siteConfig.title}</span>
     </a>

@@ -29,7 +29,7 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
           data-reactions-enabled="1"
           data-emit-metadata="0"
           data-input-position="top"
-          data-theme="light"
+          data-theme="preferred_color_scheme"
           data-lang="zh-CN"
           data-loading="lazy"
           crossorigin="anonymous"
@@ -53,9 +53,16 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
     );
   };
 
+  // 站点明暗切换时同步
   new MutationObserver(syncGiscusTheme).observe(root, {
     attributes: true,
     attributeFilter: ['class'],
   });
+
+  // giscus 是懒加载的：iframe 出现时再同步一次（否则暗色下评论区会停在亮色）
+  const observer = new MutationObserver(() => {
+    if (document.querySelector('iframe.giscus-frame')) syncGiscusTheme();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
   window.addEventListener('load', syncGiscusTheme);
 </script>

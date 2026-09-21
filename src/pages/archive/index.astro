@@ -1,6 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig } from '../../config';
 import { formatDate, posts, type Post } from '../../utils/posts';
 import { withBase } from '../../utils/url';
 
@@ -19,7 +20,12 @@ for (const post of posts) {
 const years = [...groups.entries()];
 ---
 
-<BaseLayout pageTitle={pageTitle} bannerTitle={pageTitle} bannerSubtitle={`共 ${posts.length} 篇文章`}>
+<BaseLayout
+  pageTitle={pageTitle}
+  description={`${siteConfig.title} 的时间线，共 ${posts.length} 篇文章。`}
+  bannerTitle={pageTitle}
+  bannerSubtitle={`共 ${posts.length} 篇文章`}
+>
   {
     years.map(([year, months]) => (
       <section class="card mb-4 p-4 md:p-6">
