@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { withoutBase } from './url';
 
 /**
  * 文章数据层：把 src/pages/posts/*.md 读成结构化数据，
@@ -48,7 +49,7 @@ export const posts: Post[] = Object.entries(modules)
     const m = mod as any;
     const words = countWords(readSource(key));
     return {
-      url: m.url as string,
+      url: withoutBase(m.url as string),
       file: key.split('/').pop() ?? key,
       title: m.frontmatter?.title ?? '未命名',
       description: m.frontmatter?.description ?? '',

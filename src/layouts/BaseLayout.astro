@@ -19,6 +19,9 @@ interface Props {
   home?: boolean;
   /** 是否显示右侧边栏（文章页会往里面塞目录） */
   showRightSidebar?: boolean;
+  /** 分页页面的上一页/下一页（会输出 rel=prev/next） */
+  prevUrl?: string;
+  nextUrl?: string;
 }
 
 const {
@@ -28,6 +31,8 @@ const {
   bannerSubtitle,
   home = false,
   showRightSidebar = true,
+  prevUrl,
+  nextUrl,
 } = Astro.props;
 
 const fullTitle = pageTitle ? `${pageTitle} | ${siteConfig.titleSuffix}` : siteConfig.titleSuffix;
@@ -58,6 +63,8 @@ const showBigTitle = home && siteConfig.banner.showTitle;
     <meta name="author" content={siteConfig.author} />
     <title>{fullTitle}</title>
     <link rel="canonical" href={canonicalURL} />
+    {prevUrl && <link rel="prev" href={prevUrl} />}
+    {nextUrl && <link rel="next" href={nextUrl} />}
     <link
       rel="alternate"
       type="application/rss+xml"

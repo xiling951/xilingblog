@@ -5,7 +5,7 @@ import BaseLayout from './BaseLayout.astro';
 import Comments from '../components/Comments.astro';
 import { siteConfig } from '../config';
 import { formatDate, posts, relatedPosts } from '../utils/posts';
-import { withBase } from '../utils/url';
+import { withBase, withoutBase } from '../utils/url';
 
 const { frontmatter, headings, url } = Astro.props as {
   frontmatter: Record<string, any>;
@@ -13,8 +13,8 @@ const { frontmatter, headings, url } = Astro.props as {
   url: string;
 };
 
-const current = posts.find((post) => post.url === url);
-const index = posts.findIndex((post) => post.url === url);
+const current = posts.find((post) => post.url === withoutBase(url));
+const index = posts.findIndex((post) => post.url === withoutBase(url));
 const newer = index > 0 ? posts[index - 1] : undefined;
 const older = index >= 0 && index < posts.length - 1 ? posts[index + 1] : undefined;
 

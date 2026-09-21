@@ -1,0 +1,60 @@
+---
+import { Icon } from 'astro-icon/components';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate, posts, type Post } from '../../utils/posts';
+import { withBase } from '../../utils/url';
+
+const pageTitle = '时间线';
+
+// 按 年 → 月 分组（构建期算好，不进客户端）
+const groups = new Map<string, Map<string, Post[]>>();
+for (const post of posts) {
+  const year = String(post.pubDate.getFullYear());
+  const month = `${post.pubDate.getMonth() + 1} 月`;
+  if (!groups.has(year)) groups.set(year, new Map());
+  const months = groups.get(year)!;
+  if (!months.has(month)) months.set(month, []);
+  months.get(month)!.push(post);
+}
+const years = [...groups.entries()];
+---
+
+<BaseLayout pageTitle={pageTitle} bannerTitle={pageTitle} bannerSubtitle={`共 ${posts.length} 篇文章`}>
+  {
+    years.map(([year, months]) => (
+      <section class="card mb-4 p-4 md:p-6">
+        <h2 class="flex items-center gap-2 text-[1.15rem] font-bold">
+          <Icon name="material-symbols:calendar-month-rounded" class="text-[1.3rem] text-primary" />
+          {year} 年
+          <span class="text-[0.78rem] font-normal text-meta">
+            {[...months.values()].flat().length} 篇
+          </span>
+        </h2>
+
+        {[...months.entries()].map(([month, items]) => (
+          <div class="mt-3">
+            <p class="text-[0.8rem] font-semibold text-meta">{month}</p>
+            <ul class="mt-1 flex flex-col">
+              {items.map((post) => (
+                <li>
+                  <a
+                    href={withBase(post.url)}
+                    class="btn-plain flex items-center gap-2 px-2 py-1.5 text-[0.9rem]"
+                  >
+                    <span class="w-14 shrink-0 text-[0.78rem] text-meta">
+                      {formatDate(post.pubDate).slice(5)}
+                    </span>
+                    <span class="min-w-0 truncate">{post.title}</span>
+                    <span class="ml-auto hidden shrink-0 text-[0.75rem] text-meta sm:block">
+                      {post.category}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    ))
+  }
+</BaseLayout>

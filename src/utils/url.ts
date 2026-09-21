@@ -16,3 +16,14 @@ export function withBase(path: string): string {
   if (path === '/') return `${basePath}/`;
   return `${basePath}${path}`;
 }
+
+/**
+ * 反向操作：把带 base 的路径还原成站内绝对路径。
+ * import.meta.glob 拿到的 .md 页面 url 是带 base 的（例如 /xilingblog/posts/x/），
+ * 统一归一化之后，渲染链接时再 withBase() 才不会出现双层 base。
+ */
+export function withoutBase(path: string): string {
+  if (!basePath) return path;
+  if (path === basePath) return '/';
+  return path.startsWith(`${basePath}/`) ? path.slice(basePath.length) : path;
+}

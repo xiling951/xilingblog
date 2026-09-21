@@ -32,12 +32,13 @@ export const siteConfig = {
     showTitle: true,
   },
   /** 归档每页文章数（分页用） */
-  postsPerPage: 6,
+  postsPerPage: 10,
   /** 顶部导航 */
   nav: [
     { name: '首页', url: '/', icon: 'material-symbols:home-rounded' },
     { name: '归档', url: '/blog/', icon: 'material-symbols:archive-rounded' },
     { name: '标签', url: '/tags/', icon: 'material-symbols:tag-rounded' },
+    { name: '时间线', url: '/archive/', icon: 'material-symbols:history-rounded' },
     { name: '分类', url: '/categories/', icon: 'material-symbols:folder-rounded' },
     { name: '关于', url: '/about/', icon: 'material-symbols:person-rounded' },
   ],

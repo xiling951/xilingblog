@@ -487,3 +487,10 @@ html.wallpaper body { background-color: transparent; }
 .toc-mobile summary::after { content: "▾"; margin-left: auto; font-size: 0.8rem; opacity: 0.7; }
 .toc-mobile[open] summary::after { content: "▴"; }
 .toc-mobile .widget-title { display: flex; align-items: center; gap: 0.4rem; }
+
+/* ===== 键盘焦点可见（无障碍） ===== */
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
