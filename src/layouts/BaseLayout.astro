@@ -24,6 +24,8 @@ interface Props {
   /** 分页页面的上一页/下一页（会输出 rel=prev/next） */
   prevUrl?: string;
   nextUrl?: string;
+  /** 草稿等未定稿页面：输出 noindex，避免被搜索引擎收录 */
+  noindex?: boolean;
 }
 
 const {
@@ -36,6 +38,7 @@ const {
   showRightSidebar = true,
   prevUrl,
   nextUrl,
+  noindex = false,
 } = Astro.props;
 
 const fullTitle = pageTitle ? `${pageTitle} | ${siteConfig.titleSuffix}` : siteConfig.titleSuffix;
@@ -67,6 +70,7 @@ const showBigTitle = home && siteConfig.banner.showTitle;
     <meta name="author" content={siteConfig.author} />
     <title>{fullTitle}</title>
     <link rel="canonical" href={canonicalURL} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     {prevUrl && <link rel="prev" href={prevUrl} />}
     {nextUrl && <link rel="next" href={nextUrl} />}
     <link

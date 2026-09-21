@@ -28,6 +28,7 @@ const related = current ? relatedPosts(current, 3) : [];
   bannerTitle={frontmatter.title}
   bannerSubtitle={frontmatter.description}
   type="article"
+  noindex={Boolean(frontmatter.draft)}
 >
   <article class="card p-5 md:p-7" {...(frontmatter.draft ? { 'data-pagefind-ignore': '' } : { 'data-pagefind-body': '' })}>
     <header class="border-b border-divider pb-4">
