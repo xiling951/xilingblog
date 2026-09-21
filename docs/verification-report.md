@@ -272,3 +272,52 @@ chrome --headless=new --remote-debugging-port=9230 --user-data-dir=<tmp3> about:
 # 诊断会话：document-start 注入时间线 + 手工补发 setConfig，验证 R3 机制
 chrome --headless=new --remote-debugging-port=9231 --user-data-dir=<tmp4> about:blank  # 插入 987ms(origin=null) → 就绪 2249ms → load 3422ms；补发 light 后 widget 变 light
 ```
+
+---
+
+## 八、终验 R3 修复（握手补发主题 `242439e`，run #12）+ R1/R2 无回退
+
+- **被验版本**：R3 修复提交 `242439e`「fix(giscus): 用 widget 自身的 message 作为握手信号，修 R3（浅色站点+深色系统首次冷加载停在暗色）」= GitHub Actions run #12（`conclusion = success`）。验证期间另有两次 push 上线（#14 `b5a6cde`、#15 `fcefb46`，均为 draft 草稿相关，**未触碰 `Comments.astro`**）；已核验**验证前后线上 giscus 同步脚本逐字节相同**（且含父页 `message` 握手监听与 +600ms/+2s 两次补发），故本节结论适用于当前线上版本
+- **修复机制（线上产物体内实据）**：
+  ```js
+  let o=!1;window.addEventListener("message",e=>{e.origin===n&&(t(),o||(o=!0,window.setTimeout(t,600),window.setTimeout(t,2e3)))});
+  ```
+  即：以 giscus widget 自身发出的 message（渲染后必发的 `resizeHeight`）作为「它已应用过初始主题」的握手信号，收到即补发当前主题并再补两次；发送前仍走确定性 `frameReady()` 判据（`try { contentWindow.location.origin === 'https://giscus.app' } catch { true }`）
+- **方法**：复用 t5/t6 的 CDP 脚本家族（无头 Chrome、`setCacheDisabled` + `clearBrowserCache`、父页发 nonce 定位活着的 giscus OOPIF、阶段化统计 `Log.entryAdded`）；**每个用例 3 次独立全新 profile 会话**；关键点：把**页面 target 与 giscus iframe target 的 `prefers-color-scheme` 同时 pin 到该用例的「系统偏好」**，并在读取时校验 iframe 自身的 `matchMedia`（A 用例 `prefDark=true`、B 用例 `prefDark=false`）——这样「widget 表面色 ≠ 系统偏好对应的颜色」才构成「跟随站点主题」的**有区分度**证据；本轮**全程不点主题开关**，只做首次冷加载
+
+### 8.1 逐条结果
+
+| # | 用例 | 结果 | 证据（3/3 会话） |
+| --- | --- | --- | --- |
+| A | **R3 正面**：站点浅色（`localStorage theme=light`，`html` 无 `dark`）+ 系统深色，首次冷加载后 widget 应为 light | **PASS 3/3** | 9240/9241/9242：`siteClass=(none)`、`iframePrefDark=true`（系统深色生效）而 widget `.gsc-comment-box` 背景 `rgb(255, 255, 255)`、textarea 文字 `rgb(31, 35, 40)` → **仍是 light**，未停留在系统深色；`themeReady="1"`；无需点任何开关 |
+| B | **R1 反向回归**：站点深色 + 系统浅色，首次冷加载后 widget 应为 dark | **PASS 3/3** | 9243/9244/9245：`siteClass=dark`、`iframePrefDark=false`（系统浅色生效，若只靠 `preferred_color_scheme` 会渲染成 light）而 widget 背景 `rgb(13, 17, 23)`、textarea `rgb(230, 237, 243)`；9244 的时间线还抓到翻转过程 `9ms: light → 521ms: dark`（先按系统主题渲染，被握手补发纠正） |
+| C | **R2 不回退**：上述 6 次会话 targetOrigin 警告计数为 0 | **PASS 6/6** | 6 次会话 `warnings=[]`（`Log.entryAdded` 无任何 `postMessage`/`target origin`/`DOMWindow` 记录）、`exceptions=[]`；说明「握手补发」没有把提前发送带回来 |
+
+**握手链路实据**（父页侧记录到的来自 giscus 的消息）：`https://giscus.app | {"giscus":{"resizeHeight":372}}` 与 `{"giscus":{"error":"Discussion not found"}}`（后者是仓库尚无讨论时的正常提示）→ 握手信号确实到达父页并触发补发；iframe 侧同时记录到收到的 `{"giscus":{"setConfig":{}}}`（1–6 次，视输入时序而定）。
+
+### 8.2 结论
+
+**R3 已闭合，R1/R2 无回退**：站点主题与系统偏好相反时的两种组合（浅色站点+深色系统、深色站点+浅色系统）在首次冷加载后均直接呈现**站点主题**，不再需要用户点一次开关；6 次会话的 targetOrigin 警告与 JS 异常均为 0。
+
+### 8.3 顺带观察（非本任务验收项，如实记录）
+
+- Actions run #13（`19ba1dc` draft 功能首次提交）曾在 build 步骤失败（`Build site and search index` → failure，`Check build output`/`Upload Pages artifact`/`deploy` 全部 skipped，因此当时线上仍为 #12）；现已被 #14 `b5a6cde`、#15 `fcefb46` 修复（均 `conclusion = success`），`gh` CLI 在本机不可用，故未取到当时失败日志，仅记录事实。
+- 草稿链路抽查正常：`/posts/digital-ic-design/` 返回 200（本地可预览），但不在 `sitemap-0.xml`（12 条 loc 无该 slug）与 `rss.xml`（2 条 item）中；`pagefind` 索引 `page_count` 已由 5 降为 2（与 post-1~3 被移除一致）。
+- 本轮未发现其它回归；站内链接、头像/logo、搜索等 t3 结论未受影响（本轮未改这些路径）。
+
+### 8.4 复现命令（本节，6 次会话）
+
+```powershell
+# 用例 A（站点浅色 + 系统深色 → 期望 light），3 次独立全新 profile
+chrome --headless=new --remote-debugging-port=9240 --user-data-dir=<tmpA1> about:blank
+chrome --headless=new --remote-debugging-port=9241 --user-data-dir=<tmpA2> about:blank
+chrome --headless=new --remote-debugging-port=9242 --user-data-dir=<tmpA3> about:blank
+# 用例 B（站点深色 + 系统浅色 → 期望 dark），3 次独立全新 profile
+chrome --headless=new --remote-debugging-port=9243 --user-data-dir=<tmpB1> about:blank
+chrome --headless=new --remote-debugging-port=9244 --user-data-dir=<tmpB2> about:blank
+chrome --headless=new --remote-debugging-port=9245 --user-data-dir=<tmpB3> about:blank
+# 每个会话执行：node cdp-t7.mjs <port> <A|B>
+#  脚本要点：Emulation.setEmulatedMedia(prefers-color-scheme=用例系统偏好) 施加于页面 target 与 giscus iframe target 两处
+#           → localStorage.theme=<站点主题> → 冷加载 /posts/python-notes/ → 滚到底触发懒加载
+#           → nonce 定位活帧 → 每 500ms 采样 .gsc-comment-box 背景色 15s（得到翻转时间线）+ 统计 Log 警告
+```
