@@ -46,35 +46,40 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
   const GISCUS_ORIGIN = 'https://giscus.app';
   const desiredTheme = () => (root.classList.contains('dark') ? 'dark' : 'light');
 
-  // 只有等 iframe 真正导航到 giscus.app 之后才能发消息：
-  // 过早发送时接收窗口的 origin 还是父页，浏览器会丢弃消息并打印 targetOrigin 不匹配的警告
+  // 就绪判据（确定性，不靠定时器猜）：
+  // 导航未提交时 iframe 文档是 about:blank，与父页同源 → 能读到 location.origin（= 父页 origin）→ 未就绪；
+  // 已导航到 giscus.app 后是跨域 → 读 location 会抛异常 → 视为已就绪。
+  const frameReady = (frame) => {
+    try {
+      return frame.contentWindow?.location.origin === GISCUS_ORIGIN;
+    } catch {
+      return true;
+    }
+  };
+
   const sendTheme = () => {
     const frame = document.querySelector('iframe.giscus-frame');
-    if (!frame || frame.dataset.themeReady !== '1' || !frame.contentWindow) return false;
+    if (!frame || !frame.contentWindow || !frameReady(frame)) return false;
     frame.contentWindow.postMessage({ giscus: { setConfig: { theme: desiredTheme() } } }, GISCUS_ORIGIN);
     return true;
   };
 
+  // 轮询到就绪为止：400ms × 25 ≈ 10s，足够覆盖懒加载与慢网络；因为判据确定，绝不会提前发送
   const syncWithRetry = (attempt = 0) => {
     if (sendTheme()) return;
-    if (attempt < 8) window.setTimeout(() => syncWithRetry(attempt + 1), 400);
+    if (attempt < 25) window.setTimeout(() => syncWithRetry(attempt + 1), 400);
   };
 
-  // giscus 是懒加载的：iframe 出现后绑 load；万一 load 已过（预渲染/懒加载竞态），1.2s 后补一次
   const attachToFrame = () => {
     const frame = document.querySelector('iframe.giscus-frame');
     if (!frame) return false;
     if (frame.dataset.themeHooked === '1') return true;
     frame.dataset.themeHooked = '1';
-
-    const markReadyAndSync = () => {
+    // themeReady 只作为外部可观测的标记（load 必在导航提交之后触发）
+    frame.addEventListener('load', () => {
       frame.dataset.themeReady = '1';
       sendTheme();
-    };
-    frame.addEventListener('load', markReadyAndSync);
-    window.setTimeout(() => {
-      if (frame.isConnected && frame.dataset.themeReady !== '1') markReadyAndSync();
-    }, 1200);
+    });
     return true;
   };
 
@@ -82,7 +87,7 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
     attachToFrame();
   }).observe(document.body, { childList: true, subtree: true });
 
-  // 站点明暗切换时同步（帧还没就绪就靠重试兜住，就绪后 markReadyAndSync 会补发当前主题）
+  // 站点明暗切换时同步（帧未就绪则由重试兜住）
   new MutationObserver(syncWithRetry).observe(root, {
     attributes: true,
     attributeFilter: ['class'],
@@ -93,4 +98,5 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
     syncWithRetry();
   });
   attachToFrame();
+  syncWithRetry();
 </script>

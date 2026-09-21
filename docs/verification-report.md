@@ -187,3 +187,39 @@ chrome --headless=new --remote-debugging-port=9224 --user-data-dir=<tmp> about:b
 #  3) 用 nonce 定位活着的 giscus iframe target，在其中读 getComputedStyle('.gsc-comment-box').backgroundColor
 #  4) 点 #theme-toggle 前后重复 3)，并统计 Log.entryAdded 里 /postMessage|target origin/ 的条数
 ```
+
+---
+
+## 六、复验：giscus 护栅（`cf6b2e0`，R2 是否归零）
+
+- **被复验版本**：`cf6b2e0`「fix(giscus): 只在 iframe 导航完成后才 postMessage（消除每次加载的 targetOrigin 警告）」= GitHub Actions run #8（`conclusion = success`）→ 线上即该提交
+- **护栅实现（源码与线上产物一致）**：`src/components/Comments.astro` 的 `sendTheme()` 增加前置条件 `frame.dataset.themeReady !== '1' → return false`；`attachToFrame()` 在 iframe 的 `load` 事件里调 `markReadyAndSync()`（置 `themeReady='1'` 后补发一次），另加 `setTimeout(..., 1200)` 在「load 已过/懒加载竞态」时兜底；主题 class 变化仍走 `syncWithRetry`（400ms × 8）
+- **方法**：与第五节同一套脚本（无头 Chrome + CDP、`Network.setCacheDisabled` + `clearBrowserCache`、父页发 nonce 定位活着的 giscus OOPIF、按阶段统计 `Log.entryAdded` 中 `/postMessage|target origin/`），**共 3 次独立会话**（端口 9225 / 9226 / 9227，每次全新 profile，互不共享缓存）：会话① 跑第五节的五阶段脚本；会话② 专项对照（冷加载 + 热加载，在 +1.2s/+5s/+11s/+19s 各采样一次）；会话③ 重跑会话①的同一脚本
+
+| # | 复验点 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| 1 | 控制台 targetOrigin 不匹配类警告计数归零（冷加载 / 切换主题 / 再次冷加载三阶段均为 0） | **FAIL（未 100% 归零；2/3 会话为 0，1/3 会话仍有 1 条）** | 会话①：stage0(仅访问首页)=0 → A(首次冷加载文章页)=**1** → B/C(切换主题)=1/1（不增）→ D(再次冷加载)=1（**不增**）→ E=1，即整场只 1 条且出现在冷加载阶段（`Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://giscus.app') does not match the recipient window's origin ('https://xiling951.github.io')`）。会话②（专项对照，独立 profile，冷+热两次加载、每 2–8s 采样）：全程 **0** 条。会话③（重跑会话①脚本，独立 profile）：stage0/A/B/C/D/E **全为 0** 条、`exceptions=[]`。对比修复前 `097a240`（t4：每次冷加载 +1、单场 2 条）确有改善——不再「每次加载必然 1 条」，但仍非 0，属时序相关残留：当 giscus.app 的 iframe 导航在插入后 1.2s 内未提交（首次访问、网络慢或机器负载高时）时，`setTimeout(...,1200)` 兜底会先 `markReadyAndSync()` 置位并发消息，而此刻 `contentWindow` 的 origin 仍是父页 → 消息被丢弃并打印该警告 |
+| 2 | 站点暗色冷加载后，活帧内 widget 表面仍为 dark（护栅未把主题同步一起挡掉） | **PASS** | 会话①/③ 的 D 阶段（`localStorage.theme=dark` 后冷加载 + 滚动等懒加载）：`html.class="dark"`、`iframe.dataset.themeReady="1"`、活帧 `.gsc-comment-box` 背景 `rgb(13, 17, 23)`、textarea 文字 `rgb(230, 237, 243)`；同帧 `iframePrefDark=true`（系统偏好为 dark，若只靠 `preferred_color_scheme` 不足以证明），说明主题仍由站点下发；会话③ D 阶段另在 3s 后复采一次（`D_later_state`）仍为 dark |
+| 3 | 点击主题开关后评论区主题仍跟随（light→dark→light） | **PASS** | 会话①/③：A 阶段 site=light → widget 表面 `rgb(255,255,255)`；点 `#theme-toggle`（`html` 变 `dark`）→ B 阶段 `rgb(13,17,23)`；再点回（class 清空）→ C 阶段 `rgb(255,255,255)`；会话①/③ 的 D→E（从暗色冷加载点开关）同样 dark→light；会话①帧内实收到 `{"giscus":{"setConfig":{}}}`（`origin=https://xiling951.github.io`），时间戳与两次点击一一对应 |
+| 4 | 结论追加到本报告，若 PASS 明确写出 R1/R2 均已闭合 | **PASS（报告已追加；R2 不能宣告闭合）** | 即本节 |
+
+**结论**
+
+- **R1 已闭合**：站点 `html.dark` → 评论区渲染 dark；点击主题开关 → 评论区随之在 light↔dark 间切换；护栅没有破坏主题同步（3 次会话、5 个阶段全部一致）。
+- **R2 未闭合（残留为时序相关，非必然）**：`cf6b2e0` 已消除「每次冷加载必然 1 条」的确定性告警（t4 单场 2 条 → 现 3 次会话中出现 0/0/1 条），但验收要求的「三个阶段均为 0」未达成——会话①仍出现 1 条，且只出现在「评论 iframe 懒加载首次提交慢」的场景。
+
+**残留根因与确定性修复建议（任选其一即可彻底归零）**
+
+1. 去掉盲定时器：删掉 `setTimeout(..., 1200)` 的兜底（只保留 `load` 事件 + `syncWithRetry` 重试；`syncWithRetry` 在 400ms×8 内会一直重试到 `themeReady==='1'` 为止，懒加载场景已覆盖）；或
+2. 发送前用 origin 作为判据：把 `frame.contentWindow.postMessage(...)` 包进 `try { if (frame.contentWindow.location.origin !== 'https://giscus.app') return false; postMessage(...) } catch { return false; }`（跨域未提交时读取 `location` 会抛异常，正好当作「未就绪」）；或
+3. 最简单：`frame.contentWindow.postMessage({...}, '*')`（giscus 官方示例用法，不再有 targetOrigin 校验，消息仍只发往 giscus 的 iframe）。
+
+**复现命令（本节，三次会话）**
+
+```powershell
+# 每次用全新 profile 起一个无头 Chrome，然后跑同一脚本（nonce 定位活帧 + 阶段化统计警告）
+chrome --headless=new --remote-debugging-port=9225 --user-data-dir=<tmp1> about:blank   # 会话①：五阶段脚本 → 观察到 1 条（冷加载阶段）
+chrome --headless=new --remote-debugging-port=9226 --user-data-dir=<tmp2> about:blank   # 会话②：冷/热加载专项采样 → 0 条
+chrome --headless=new --remote-debugging-port=9227 --user-data-dir=<tmp3> about:blank   # 会话③：重跑五阶段脚本 → 0 条
+# 关键断言：Log.entryAdded 中 /postMessage|target origin/ 计数；iframe.dataset.themeReady；活帧 .gsc-comment-box 背景色
+```
