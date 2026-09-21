@@ -46,38 +46,43 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
   const GISCUS_ORIGIN = 'https://giscus.app';
   const desiredTheme = () => (root.classList.contains('dark') ? 'dark' : 'light');
 
+  // 只有等 iframe 真正导航到 giscus.app 之后才能发消息：
+  // 过早发送时接收窗口的 origin 还是父页，浏览器会丢弃消息并打印 targetOrigin 不匹配的警告
   const sendTheme = () => {
     const frame = document.querySelector('iframe.giscus-frame');
-    if (!frame || !frame.contentWindow) return false;
-    // 必须等 iframe 导航完成后再发：过早发送时它的 origin 还是 null，
-    // 浏览器会因 targetOrigin 不匹配直接丢弃消息（并打印一条警告）
+    if (!frame || frame.dataset.themeReady !== '1' || !frame.contentWindow) return false;
     frame.contentWindow.postMessage({ giscus: { setConfig: { theme: desiredTheme() } } }, GISCUS_ORIGIN);
     return true;
   };
 
   const syncWithRetry = (attempt = 0) => {
     if (sendTheme()) return;
-    if (attempt < 6) window.setTimeout(() => syncWithRetry(attempt + 1), 400);
+    if (attempt < 8) window.setTimeout(() => syncWithRetry(attempt + 1), 400);
   };
 
-  // giscus 是懒加载的：iframe 出现后绑 load，事件已过则用定时兜一次
+  // giscus 是懒加载的：iframe 出现后绑 load；万一 load 已过（预渲染/懒加载竞态），1.2s 后补一次
   const attachToFrame = () => {
     const frame = document.querySelector('iframe.giscus-frame');
     if (!frame) return false;
     if (frame.dataset.themeHooked === '1') return true;
     frame.dataset.themeHooked = '1';
-    frame.addEventListener('load', sendTheme);
+
+    const markReadyAndSync = () => {
+      frame.dataset.themeReady = '1';
+      sendTheme();
+    };
+    frame.addEventListener('load', markReadyAndSync);
     window.setTimeout(() => {
-      if (frame.isConnected) sendTheme();
-    }, 1500);
+      if (frame.isConnected && frame.dataset.themeReady !== '1') markReadyAndSync();
+    }, 1200);
     return true;
   };
 
   new MutationObserver(() => {
-    if (attachToFrame()) sendTheme();
+    attachToFrame();
   }).observe(document.body, { childList: true, subtree: true });
 
-  // 站点明暗切换时同步（含 iframe 尚未加载完的情况，靠重试兜住）
+  // 站点明暗切换时同步（帧还没就绪就靠重试兜住，就绪后 markReadyAndSync 会补发当前主题）
   new MutationObserver(syncWithRetry).observe(root, {
     attributes: true,
     attributeFilter: ['class'],
