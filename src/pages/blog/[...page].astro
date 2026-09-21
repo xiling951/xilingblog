@@ -1,0 +1,23 @@
+---
+import Pagination from '../../components/Pagination.astro';
+import PostList from '../../components/PostList.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { posts } from '../../utils/posts';
+
+export async function getStaticPaths({ paginate }) {
+  // note: getStaticPaths is hoisted into its own scope, so no outer constants here
+  return paginate(posts, { pageSize: 4 });
+}
+
+const { page } = Astro.props;
+const pageTitle = page.currentPage === 1 ? '归档' : `归档 · 第 ${page.currentPage} 页`;
+---
+
+<BaseLayout
+  pageTitle={pageTitle}
+  bannerTitle="归档"
+  bannerSubtitle={`共 ${posts.length} 篇文章 · 第 ${page.currentPage} / ${page.lastPage} 页`}
+>
+  <PostList posts={page.data} />
+  <Pagination currentPage={page.currentPage} lastPage={page.lastPage} />
+</BaseLayout>

@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { posts, tagCounts } from '../../utils/posts';
+import { withBase } from '../../utils/url';
 
 const pageTitle = '标签';
 const maxCount = Math.max(...tagCounts.map((tag) => tag.count), 1);
@@ -18,7 +19,7 @@ const sizeOf = (count: number) => (count >= maxCount ? '1rem' : count > 1 ? '0.9
       {
         tagCounts.map((tag) => (
           <a
-            href={`/tags/${tag.name}/`}
+            href={withBase(`/tags/${tag.name}/`)}
             class="chip"
             style={`font-size:${sizeOf(tag.count)}`}
           >
@@ -37,7 +38,7 @@ const sizeOf = (count: number) => (count >= maxCount ? '1rem' : count > 1 ? '0.9
       按分类浏览
     </div>
     <div class="mt-4">
-      <a href="/blog/" class="btn-regular inline-flex items-center gap-1 px-3 py-1.5 text-[0.85rem]">
+      <a href={withBase('/blog/')} class="btn-regular inline-flex items-center gap-1 px-3 py-1.5 text-[0.85rem]">
         <Icon name="material-symbols:archive-rounded" class="text-[1.05rem]" />
         去归档页按分类筛选
       </a>

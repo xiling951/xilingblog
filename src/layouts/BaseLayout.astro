@@ -1,11 +1,14 @@
 ---
 import { Icon } from 'astro-icon/components';
+import FloatingControls from '../components/FloatingControls.astro';
 import Footer from '../components/Footer.astro';
 import Navbar from '../components/Navbar.astro';
 import RightSidebar from '../components/RightSidebar.astro';
+import Search from '../components/Search.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { siteConfig } from '../config';
 import '../styles/main.css';
+import { withBase } from '../utils/url';
 
 interface Props {
   pageTitle?: string;
@@ -36,15 +39,15 @@ const showBigTitle = home && siteConfig.banner.showTitle;
 <html lang={siteConfig.lang} style={`--hue:${siteConfig.themeHue}`}>
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <link rel="icon" href={withBase('/favicon.ico')} />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <meta name="author" content={siteConfig.author} />
     <title>{fullTitle}</title>
 
-    <!-- 预涂主题，避免亮/暗切换时的闪烁 -->
+    <!-- 预涂主题与壁纸模式，避免刷新时闪烁 -->
     <script is:inline define:vars={{ defaultTheme: siteConfig.defaultTheme }}>
       (() => {
         try {
@@ -54,6 +57,9 @@ const showBigTitle = home && siteConfig.banner.showTitle;
             ? stored === 'dark'
             : defaultTheme === 'dark' || (defaultTheme === 'auto' && prefersDark);
           if (dark) document.documentElement.classList.add('dark');
+          if (localStorage.getItem('wallpaper') === 'on') {
+            document.documentElement.classList.add('wallpaper');
+          }
         } catch (e) {
           /* 忽略 */
         }
@@ -62,6 +68,9 @@ const showBigTitle = home && siteConfig.banner.showTitle;
   </head>
 
   <body class="min-h-screen">
+    <!-- 壁纸模式的背景层（默认透明，开启后淡入） -->
+    <div class="wallpaper-layer" aria-hidden="true"></div>
+
     <Navbar />
 
     <!-- Banner -->
@@ -128,7 +137,7 @@ const showBigTitle = home && siteConfig.banner.showTitle;
         <nav class="card p-2">
           {
             siteConfig.nav.map((item) => (
-              <a href={item.url} class="btn-plain flex items-center gap-2 px-3 py-2 text-[0.92rem]">
+              <a href={withBase(item.url)} class="btn-plain flex items-center gap-2 px-3 py-2 text-[0.92rem]">
                 <Icon name={item.icon} class="text-[1.15rem]" />
                 {item.name}
               </a>
@@ -140,6 +149,10 @@ const showBigTitle = home && siteConfig.banner.showTitle;
         </div>
       </div>
     </div>
+
+    <!-- 搜索弹窗 + 右下角浮动按钮（壁纸模式 / 回到顶部） -->
+    <Search />
+    <FloatingControls />
 
     <script>
       import '../scripts/theme.js';

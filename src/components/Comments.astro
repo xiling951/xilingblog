@@ -1,0 +1,61 @@
+---
+import { Icon } from 'astro-icon/components';
+import { siteConfig } from '../config';
+
+const comments = siteConfig.comments;
+const enabled = comments.enable && comments.repoId && comments.categoryId;
+---
+
+{
+  enabled && (
+    <section class="card mt-4 p-4 md:p-6">
+      <div class="widget-title text-primary">
+        <Icon name="material-symbols:forum-rounded" class="text-[1.2rem]" />
+        评论
+      </div>
+      <p class="mt-2 text-[0.78rem] text-meta">
+        评论由 GitHub Discussions 驱动（giscus），需要登录 GitHub 账号。
+      </p>
+      <div class="mt-4">
+        <script
+          is:inline
+          src="https://giscus.app/client.js"
+          data-repo={comments.repo}
+          data-repo-id={comments.repoId}
+          data-category={comments.category}
+          data-category-id={comments.categoryId}
+          data-mapping={comments.mapping}
+          data-strict="0"
+          data-reactions-enabled="1"
+          data-emit-metadata="0"
+          data-input-position="top"
+          data-theme="light"
+          data-lang="zh-CN"
+          data-loading="lazy"
+          crossorigin="anonymous"
+          async
+        ></script>
+      </div>
+    </section>
+  )
+}
+
+<script>
+  // giscus 的配色跟随站点的明暗切换
+  const root = document.documentElement;
+
+  const syncGiscusTheme = () => {
+    const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    if (!frame) return;
+    frame.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme: root.classList.contains('dark') ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  };
+
+  new MutationObserver(syncGiscusTheme).observe(root, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+  window.addEventListener('load', syncGiscusTheme);
+</script>

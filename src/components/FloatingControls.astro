@@ -1,0 +1,42 @@
+---
+import { Icon } from 'astro-icon/components';
+---
+
+<div class="floating-controls">
+  <button
+    id="wallpaper-toggle"
+    type="button"
+    class="floating-btn"
+    title="壁纸模式"
+    aria-label="切换壁纸模式"
+  >
+    <Icon name="material-symbols:wallpaper-rounded" class="text-[1.2rem]" />
+  </button>
+  <button id="back-to-top" type="button" class="floating-btn hidden" title="回到顶部" aria-label="回到顶部">
+    <Icon name="material-symbols:vertical-align-top-rounded" class="text-[1.2rem]" />
+  </button>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const wallpaperButton = document.getElementById('wallpaper-toggle');
+
+  const syncWallpaper = () => wallpaperButton?.classList.toggle('active', root.classList.contains('wallpaper'));
+  syncWallpaper();
+
+  wallpaperButton?.addEventListener('click', () => {
+    const on = root.classList.toggle('wallpaper');
+    try {
+      localStorage.setItem('wallpaper', on ? 'on' : 'off');
+    } catch {
+      /* 忽略隐私模式 */
+    }
+    syncWallpaper();
+  });
+
+  const topButton = document.getElementById('back-to-top');
+  const syncTop = () => topButton?.classList.toggle('hidden', window.scrollY < 320);
+  syncTop();
+  window.addEventListener('scroll', syncTop, { passive: true });
+  topButton?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+</script>

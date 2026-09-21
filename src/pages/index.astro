@@ -1,9 +1,20 @@
 ---
+import { Icon } from 'astro-icon/components';
 import PostList from '../components/PostList.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { posts } from '../utils/posts';
+import { withBase } from '../utils/url';
+
+const latest = posts.slice(0, 6);
 ---
 
 <BaseLayout home>
-  <PostList posts={posts} />
+  <div class="card mb-4 flex flex-wrap items-center gap-2 p-3">
+    <Icon name="material-symbols:campaign-rounded" class="text-[1.2rem] text-primary" />
+    <span class="text-[0.9rem] font-semibold">最新文章</span>
+    <a href={withBase('/blog/')} class="btn-plain ml-auto px-3 py-1.5 text-[0.8rem] text-btn-content">
+      查看全部 {posts.length} 篇 →
+    </a>
+  </div>
+  <PostList posts={latest} />
 </BaseLayout>

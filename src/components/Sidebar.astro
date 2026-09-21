@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import { siteConfig } from '../config';
 import { tagCounts } from '../utils/posts';
+import { withBase } from '../utils/url';
 ---
 
 <aside class="flex w-full flex-col gap-4">
@@ -41,7 +42,7 @@ import { tagCounts } from '../utils/posts';
         <p class="mt-2 text-[0.85rem] leading-relaxed text-meta">{siteConfig.announcement.content}</p>
         {siteConfig.announcement.link && (
           <a
-            href={siteConfig.announcement.link.url}
+            href={withBase(siteConfig.announcement.link.url)}
             class="mt-3 inline-flex items-center gap-1 text-[0.82rem] text-btn-content hover:underline"
           >
             {siteConfig.announcement.link.name}
@@ -61,7 +62,7 @@ import { tagCounts } from '../utils/posts';
     <div class="mt-3 flex flex-wrap gap-2">
       {
         tagCounts.map((tag) => (
-          <a href={`/tags/${tag.name}/`} class="chip">
+          <a href={withBase(`/tags/${tag.name}/`)} class="chip">
             <Icon name="material-symbols:tag-outline-rounded" class="text-[0.85rem]" />
             {tag.name}
             <span class="opacity-60">{tag.count}</span>
@@ -70,7 +71,7 @@ import { tagCounts } from '../utils/posts';
       }
     </div>
     <a
-      href="/tags/"
+      href={withBase('/tags/')}
       class="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-divider py-2 text-[0.82rem] text-btn-content transition-colors hover:bg-btn"
     >
       全部标签

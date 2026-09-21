@@ -356,3 +356,116 @@
   color: var(--btn-content);
   font-weight: 600;
 }
+
+/* ==========================================================================
+   壁纸模式（全屏渐变壁纸 + 毛玻璃卡片）
+   ========================================================================== */
+
+.wallpaper-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+  background:
+    radial-gradient(90% 70% at 15% 10%, oklch(0.85 0.10 var(--hue)) 0%, transparent 60%),
+    radial-gradient(80% 70% at 85% 20%, oklch(0.84 0.11 calc(var(--hue) + 50)) 0%, transparent 62%),
+    radial-gradient(90% 80% at 50% 100%, oklch(0.88 0.08 calc(var(--hue) - 40)) 0%, transparent 65%),
+    linear-gradient(160deg, oklch(0.96 0.03 var(--hue)) 0%, oklch(0.93 0.05 calc(var(--hue) + 20)) 100%);
+}
+
+.dark .wallpaper-layer {
+  background:
+    radial-gradient(90% 70% at 15% 10%, oklch(0.34 0.10 var(--hue)) 0%, transparent 60%),
+    radial-gradient(80% 70% at 85% 20%, oklch(0.32 0.11 calc(var(--hue) + 50)) 0%, transparent 62%),
+    radial-gradient(90% 80% at 50% 100%, oklch(0.30 0.09 calc(var(--hue) - 40)) 0%, transparent 65%),
+    linear-gradient(160deg, oklch(0.20 0.04 var(--hue)) 0%, oklch(0.16 0.03 calc(var(--hue) + 20)) 100%);
+}
+
+html.wallpaper .wallpaper-layer {  opacity: 1; }
+html.wallpaper { background-color: transparent; }
+html.wallpaper .card,
+html.wallpaper .navbar-blur,
+html.wallpaper .float-panel {
+  background-color: var(--card-bg-transparent);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+
+/* ===== 分页 ===== */
+.page-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
+  background-color: var(--btn-regular-bg);
+  color: var(--btn-content);
+  transition: background-color 0.2s ease;
+}
+.page-link:hover { background-color: var(--btn-regular-bg-hover); }
+.page-link.current { background-color: var(--btn-content); color: var(--card-bg); font-weight: 700; }
+.page-link.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ===== 右下角浮动按钮 ===== */
+.floating-controls {
+  position: fixed;
+  right: 1rem;
+  bottom: 1.25rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.floating-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-divider);
+  background-color: var(--card-bg-transparent);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  color: var(--btn-content);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.floating-btn:hover { transform: translateY(-2px); background-color: var(--btn-regular-bg); }
+.floating-btn.active { background-color: var(--btn-content); color: var(--card-bg); }
+
+/* ===== Pagefind 搜索弹窗 ===== */
+.search-modal { position: fixed; inset: 0; z-index: 80; display: none; }
+.search-modal.open { display: block; }
+.search-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.search-panel {
+  position: relative;
+  margin: 6vh auto 0;
+  width: calc(100% - 2rem);
+  max-width: 44rem;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-large);
+  background-color: var(--float-panel-bg);
+  border: 1px solid var(--line-divider);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+.search-result { display: block; padding: 0.6rem 0.75rem; border-radius: 0.6rem; transition: background-color 0.15s ease; }
+.search-result:hover, .search-result:focus { background-color: var(--btn-regular-bg); }
+.search-result mark { background-color: var(--selection-bg); color: inherit; border-radius: 0.2rem; padding: 0 0.1rem; }
+
+/* ===== 评论区 ===== */
+.comments-wrap { margin-top: 1rem; }
+
+html.wallpaper body { background-color: transparent; }

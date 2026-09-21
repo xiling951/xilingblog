@@ -1,6 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { formatDate, type Post } from '../utils/posts';
+import { withBase } from '../utils/url';
 
 interface Props {
   post: Post;
@@ -10,7 +11,7 @@ const { post } = Astro.props;
 ---
 
 <a
-  href={post.url}
+  href={withBase(post.url)}
   class="card card-hover group flex gap-3 p-3 md:gap-4 md:p-4"
   data-category={post.category}
 >

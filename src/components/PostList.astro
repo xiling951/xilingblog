@@ -1,11 +1,12 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { categories, type Post } from '../utils/posts';
+import { withBase } from '../utils/url';
 import PostCard from './PostCard.astro';
 
 interface Props {
   posts: Post[];
-  /** 是否显示顶部的分类筛选胶囊 */
+  /** 是否显示顶部的分类入口（链接到分类页，和分页共存） */
   showFilter?: boolean;
 }
 
@@ -15,25 +16,28 @@ const { posts, showFilter = true } = Astro.props;
 {
   showFilter && (
     <div class="card mb-4 flex flex-wrap items-center gap-1.5 p-3">
-      <button
-        type="button"
-        class="filter-chip btn-plain bg-btn px-3 py-1.5 text-[0.82rem] font-semibold text-btn-content"
-        data-category="__all"
+      <a
+        href={withBase('/blog/')}
+        class="btn-plain flex items-center gap-1 bg-btn px-3 py-1.5 text-[0.82rem] font-semibold text-btn-content"
       >
-        <Icon name="material-symbols:apps-rounded" class="mr-1 inline text-[1rem] align-[-0.2rem]" />
+        <Icon name="material-symbols:apps" class="text-[1rem]" />
         全部
-        <span class="ml-1 opacity-60">{posts.length}</span>
-      </button>
+      </a>
+      <a
+        href={withBase('/categories/')}
+        class="btn-plain flex items-center gap-1 px-3 py-1.5 text-[0.82rem] text-plain"
+      >
+        <Icon name="material-symbols:folder-rounded" class="text-[1rem]" />
+        分类
+      </a>
       {categories.map((category) => (
-        <button
-          type="button"
-          class="filter-chip btn-plain px-3 py-1.5 text-[0.82rem] text-plain"
-          data-category={category.name}
+        <a
+          href={withBase(`/categories/${category.name}/`)}
+          class="btn-plain flex items-center gap-1 px-3 py-1.5 text-[0.82rem] text-plain"
         >
-          <Icon name="material-symbols:folder-rounded" class="mr-1 inline text-[1rem] align-[-0.2rem]" />
           {category.name}
-          <span class="ml-1 opacity-60">{category.count}</span>
-        </button>
+          <span class="opacity-60">{category.count}</span>
+        </a>
       ))}
     </div>
   )
@@ -41,34 +45,4 @@ const { posts, showFilter = true } = Astro.props;
 
 <div id="post-list" class="flex flex-col gap-4">
   {posts.map((post) => <PostCard post={post} />)}
-  <p id="post-empty" class="card hidden p-8 text-center text-[0.85rem] text-meta">
-    这个分类下暂时还没有文章。
-  </p>
 </div>
-
-<script>
-  // 首页/归档页的分类筛选（对应 Mizuki 首页那排胶囊）
-  const chips = document.querySelectorAll<HTMLButtonElement>('.filter-chip');
-  const cards = document.querySelectorAll<HTMLElement>('#post-list [data-category]');
-  const empty = document.getElementById('post-empty');
-
-  chips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const target = chip.dataset.category;
-      chips.forEach((other) => {
-        other.classList.remove('bg-btn', 'text-btn-content', 'font-semibold');
-        other.classList.add('text-plain');
-      });
-      chip.classList.add('bg-btn', 'text-btn-content', 'font-semibold');
-      chip.classList.remove('text-plain');
-
-      let visible = 0;
-      cards.forEach((card) => {
-        const show = target === '__all' || card.dataset.category === target;
-        card.classList.toggle('hidden', !show);
-        if (show) visible += 1;
-      });
-      empty?.classList.toggle('hidden', visible > 0);
-    });
-  });
-</script>

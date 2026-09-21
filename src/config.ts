@@ -36,6 +36,7 @@ export const siteConfig = {
     { name: '首页', url: '/', icon: 'material-symbols:home-rounded' },
     { name: '归档', url: '/blog/', icon: 'material-symbols:archive-rounded' },
     { name: '标签', url: '/tags/', icon: 'material-symbols:tag-rounded' },
+    { name: '分类', url: '/categories/', icon: 'material-symbols:folder-rounded' },
     { name: '关于', url: '/about/', icon: 'material-symbols:person-rounded' },
   ],
   /** 左侧边栏的个人卡 */
@@ -55,6 +56,20 @@ export const siteConfig = {
     title: '公告',
     content: '这里是我的个人博客，内容主要是课程笔记、学习日记和一些折腾记录。文章还在陆续整理中。',
     link: { name: '看看归档', url: '/blog/' },
+  },
+  /**
+   * 评论区（giscus，基于 GitHub Discussions）
+   * repoId / categoryId 已用 GitHub API 填好，Discussions 已开启。
+   * 若页面上评论框提示需要安装 App，点一次即可：
+   *   https://github.com/apps/giscus/installations/new
+   */
+  comments: {
+    enable: true,
+    repo: 'xiling951/xilingblog',
+    repoId: 'R_kgDORIR23w',
+    category: 'Announcements',
+    categoryId: 'DIC_kwDORIR2384DGFMc',
+    mapping: 'pathname',
   },
   /** 页脚 */
   footer: {

@@ -3,6 +3,7 @@ import { Icon } from 'astro-icon/components';
 import PostList from '../../components/PostList.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { posts, tagCounts } from '../../utils/posts';
+import { withBase } from '../../utils/url';
 
 export async function getStaticPaths() {
   return tagCounts.map((tag) => ({
@@ -21,7 +22,7 @@ const { tagPosts } = Astro.props;
     <span class="text-[0.95rem]">
       包含「<span class="font-semibold text-btn-content">{tag}</span>」标签的文章
     </span>
-    <a href="/tags/" class="btn-plain ml-auto px-3 py-1.5 text-[0.8rem] text-btn-content">
+    <a href={withBase('/tags/')} class="btn-plain ml-auto px-3 py-1.5 text-[0.8rem] text-btn-content">
       全部标签
     </a>
   </div>

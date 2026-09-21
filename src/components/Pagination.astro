@@ -1,0 +1,59 @@
+---
+import type { Post } from '../utils/posts';
+import { withBase } from '../utils/url';
+
+interface Props {
+  currentPage: number;
+  lastPage: number;
+  /** 归档路由前缀（不含 base） */
+  basePath?: string;
+}
+
+const { currentPage, lastPage, basePath = '/blog/' } = Astro.props;
+
+const href = (page: number) => (page === 1 ? withBase(basePath) : withBase(`${basePath}${page}/`));
+
+// 页码窗口：当前页前后各两页，两端保留首尾
+const numbers: (number | '...')[] = [];
+for (let page = 1; page <= lastPage; page += 1) {
+  if (page === 1 || page === lastPage || Math.abs(page - currentPage) <= 2) {
+    numbers.push(page);
+  } else if (numbers[numbers.length - 1] !== '...') {
+    numbers.push('...');
+  }
+}
+---
+
+{
+  lastPage > 1 && (
+    <nav class="card mt-4 flex flex-wrap items-center justify-center gap-2 p-3" aria-label="分页">
+      <a
+        class:list={['page-link', currentPage === 1 && 'disabled']}
+        href={href(Math.max(1, currentPage - 1))}
+        aria-label="上一页"
+      >
+        上一页
+      </a>
+      {numbers.map((item) =>
+        item === '...' ? (
+          <span class="px-1 text-meta">…</span>
+        ) : item === currentPage ? (
+          <span class="page-link current" aria-current="page">
+            {item}
+          </span>
+        ) : (
+          <a class="page-link" href={href(item)}>
+            {item}
+          </a>
+        )
+      )}
+      <a
+        class:list={['page-link', currentPage === lastPage && 'disabled']}
+        href={href(Math.min(lastPage, currentPage + 1))}
+        aria-label="下一页"
+      >
+        下一页
+      </a>
+    </nav>
+  )
+}

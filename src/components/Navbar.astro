@@ -1,9 +1,14 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { siteConfig } from '../config';
+import { withBase } from '../utils/url';
 
 const pathname = Astro.url.pathname;
-const isActive = (url: string) => (url === '/' ? pathname === '/' : pathname.startsWith(url));
+const isActive = (url: string) => {
+  const target = withBase(url).replace(/\/$/, '');
+  const current = pathname.replace(/\/$/, '');
+  return target === withBase('/').replace(/\/$/, '') ? current === target : current.startsWith(target);
+};
 ---
 
 <div class="navbar-blur sticky top-0 z-50 border-b border-divider">
@@ -19,7 +24,7 @@ const isActive = (url: string) => (url === '/' ? pathname === '/' : pathname.sta
       {
         siteConfig.nav.map((item) => (
           <a
-            href={item.url}
+            href={withBase(item.url)}
             class:list={[
               'btn-plain flex items-center gap-1.5 px-3 py-1.5 text-[0.92rem]',
               isActive(item.url) ? 'bg-btn text-btn-content font-semibold' : 'text-plain',
@@ -34,6 +39,16 @@ const isActive = (url: string) => (url === '/' ? pathname === '/' : pathname.sta
     </nav>
 
     <div class="ml-auto flex items-center gap-1">
+      <!-- 搜索 -->
+      <button
+        type="button"
+        class="search-open btn-icon h-9 w-9 text-plain"
+        aria-label="站内搜索"
+        title="站内搜索（Ctrl / ⌘ + K）"
+      >
+        <Icon name="material-symbols:search-rounded" class="text-[1.2rem]" />
+      </button>
+
       <!-- 主题切换（图标随 .dark 切换） -->
       <button
         id="theme-toggle"

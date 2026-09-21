@@ -1,0 +1,31 @@
+---
+import { Icon } from 'astro-icon/components';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { categories } from '../../utils/posts';
+import { withBase } from '../../utils/url';
+
+const pageTitle = '分类';
+---
+
+<BaseLayout pageTitle={pageTitle} bannerTitle={pageTitle} bannerSubtitle={`共 ${categories.length} 个分类`}>
+  <div class="card p-5 md:p-7">
+    <div class="widget-title text-primary">
+      <Icon name="material-symbols:folder-rounded" class="text-[1.3rem]" />
+      全部分类
+    </div>
+    <div class="mt-4 flex flex-col gap-2">
+      {
+        categories.map((category) => (
+          <a
+            href={withBase(`/categories/${category.name}/`)}
+            class="flex items-center gap-2 rounded-lg px-3 py-2 text-[0.9rem] transition-colors hover:bg-btn"
+          >
+            <Icon name="material-symbols:folder-open-rounded" class="text-[1.15rem] text-btn-content" />
+            <span>{category.name}</span>
+            <span class="ml-auto text-meta">{category.count} 篇</span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

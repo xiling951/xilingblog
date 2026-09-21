@@ -1,0 +1,134 @@
+---
+import { Icon } from 'astro-icon/components';
+---
+
+<!-- 搜索弹窗：按钮在 Navbar 里（.search-open），这里放面板与逻辑 -->
+<div id="search-modal" class="search-modal" role="dialog" aria-modal="true" aria-label="站内搜索">
+  <button type="button" class="search-backdrop" data-search-close aria-label="关闭搜索"></button>
+  <div class="search-panel">
+    <div class="flex items-center gap-2 border-b border-divider px-4 py-3">
+      <Icon name="material-symbols:search-rounded" class="text-[1.25rem] text-primary" />
+      <input
+        id="search-input"
+        type="search"
+        placeholder="搜索标题、摘要和正文…"
+        autocomplete="off"
+        class="w-full bg-transparent text-[0.95rem] outline-none placeholder:text-meta"
+      />
+      <button
+        type="button"
+        data-search-close
+        class="btn-plain px-2 py-1 text-[0.72rem] text-meta"
+        aria-label="关闭搜索"
+      >
+        Esc
+      </button>
+    </div>
+    <p id="search-status" class="px-4 py-3 text-[0.8rem] text-meta">
+      输入关键词开始搜索（快捷键 Ctrl / ⌘ + K）
+    </p>
+    <div id="search-results" class="flex max-h-[60vh] flex-col gap-1 overflow-y-auto px-3 pb-3"></div>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('search-modal');
+  const input = document.getElementById('search-input') as HTMLInputElement | null;
+  const resultsEl = document.getElementById('search-results');
+  const statusEl = document.getElementById('search-status');
+  const base = import.meta.env.BASE_URL;
+
+  let pagefind: any = null;
+  let loading: Promise<any> | null = null;
+  let timer: number | undefined;
+
+  async function getPagefind() {
+    if (pagefind) return pagefind;
+    if (!loading) {
+      // Pagefind 的索引只在 `npm run build` 之后存在于 dist/pagefind/
+      loading = import(/* @vite-ignore */ `${base}pagefind/pagefind.js`)
+        .then(async (mod: any) => {
+          await mod.options({ baseUrl: base });
+          await mod.init();
+          pagefind = mod;
+          return mod;
+        })
+        .catch((error) => {
+          loading = null;
+          throw error;
+        });
+    }
+    return loading;
+  }
+
+  function openSearch() {
+    modal?.classList.add('open');
+    input?.focus();
+    input?.select();
+  }
+
+  function closeSearch() {
+    modal?.classList.remove('open');
+  }
+
+  document.querySelectorAll('.search-open').forEach((button) => {
+    button.addEventListener('click', openSearch);
+  });
+  document.querySelectorAll('[data-search-close]').forEach((button) => {
+    button.addEventListener('click', closeSearch);
+  });
+  document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      openSearch();
+    }
+    if (event.key === 'Escape') closeSearch();
+    if (event.key === 'Enter' && modal?.classList.contains('open')) {
+      const first = resultsEl?.querySelector<HTMLAnchorElement>('a.search-result');
+      first?.click();
+    }
+  });
+
+  async function runSearch(query: string) {
+    if (!resultsEl || !statusEl) return;
+    if (!query.trim()) {
+      resultsEl.innerHTML = '';
+      statusEl.textContent = '输入关键词开始搜索（快捷键 Ctrl / ⌘ + K）';
+      return;
+    }
+
+    let pf: any;
+    try {
+      statusEl.textContent = '正在搜索…';
+      pf = await getPagefind();
+    } catch {
+      resultsEl.innerHTML = '';
+      statusEl.textContent =
+        '搜索索引还没生成：本地请先 `npm run build` 再 `npm run preview`；线上（构建产物）会自动带上索引。';
+      return;
+    }
+
+    const search = await pf.search(query);
+    const items = await Promise.all(search.results.slice(0, 8).map((r: any) => r.data()));
+    resultsEl.innerHTML = '';
+    statusEl.textContent = items.length ? `找到 ${search.results.length} 条结果` : '没有找到相关内容';
+
+    for (const item of items) {
+      const link = document.createElement('a');
+      link.className = 'search-result';
+      link.href = item.url;
+      link.innerHTML = `
+        <div class="flex items-center gap-1.5">
+          <span class="text-[0.92rem] font-semibold">${item.meta?.title ?? item.url}</span>
+        </div>
+        <p class="mt-1 line-clamp-2 text-[0.8rem] leading-relaxed text-meta">${item.excerpt ?? ''}</p>
+      `;
+      resultsEl.appendChild(link);
+    }
+  }
+
+  input?.addEventListener('input', () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => runSearch(input.value), 180);
+  });
+</script>
