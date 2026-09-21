@@ -28,7 +28,7 @@ export default defineConfig({
   integrations: [
     icon(),
     sitemap({
-      filter: (page) => !draftSlugs.some((slug) => page.includes(/posts/${slug}/)),
+      filter: (page) => !draftSlugs.some((slug) => page.includes(`/posts/${slug}/`)),
     }),
     expressiveCode({
       // 跟随站点的 .dark class（而不是系统的 prefers-color-scheme）
