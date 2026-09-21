@@ -41,28 +41,51 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
 }
 
 <script>
-  // giscus 的配色跟随站点的明暗切换
+  // giscus 配色要跟着站点开关走（而不只是跟系统偏好）
   const root = document.documentElement;
+  const GISCUS_ORIGIN = 'https://giscus.app';
+  const desiredTheme = () => (root.classList.contains('dark') ? 'dark' : 'light');
 
-  const syncGiscusTheme = () => {
-    const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
-    if (!frame) return;
-    frame.contentWindow?.postMessage(
-      { giscus: { setConfig: { theme: root.classList.contains('dark') ? 'dark' : 'light' } } },
-      'https://giscus.app'
-    );
+  const sendTheme = () => {
+    const frame = document.querySelector('iframe.giscus-frame');
+    if (!frame || !frame.contentWindow) return false;
+    // 必须等 iframe 导航完成后再发：过早发送时它的 origin 还是 null，
+    // 浏览器会因 targetOrigin 不匹配直接丢弃消息（并打印一条警告）
+    frame.contentWindow.postMessage({ giscus: { setConfig: { theme: desiredTheme() } } }, GISCUS_ORIGIN);
+    return true;
   };
 
-  // 站点明暗切换时同步
-  new MutationObserver(syncGiscusTheme).observe(root, {
+  const syncWithRetry = (attempt = 0) => {
+    if (sendTheme()) return;
+    if (attempt < 6) window.setTimeout(() => syncWithRetry(attempt + 1), 400);
+  };
+
+  // giscus 是懒加载的：iframe 出现后绑 load，事件已过则用定时兜一次
+  const attachToFrame = () => {
+    const frame = document.querySelector('iframe.giscus-frame');
+    if (!frame) return false;
+    if (frame.dataset.themeHooked === '1') return true;
+    frame.dataset.themeHooked = '1';
+    frame.addEventListener('load', sendTheme);
+    window.setTimeout(() => {
+      if (frame.isConnected) sendTheme();
+    }, 1500);
+    return true;
+  };
+
+  new MutationObserver(() => {
+    if (attachToFrame()) sendTheme();
+  }).observe(document.body, { childList: true, subtree: true });
+
+  // 站点明暗切换时同步（含 iframe 尚未加载完的情况，靠重试兜住）
+  new MutationObserver(syncWithRetry).observe(root, {
     attributes: true,
     attributeFilter: ['class'],
   });
 
-  // giscus 是懒加载的：iframe 出现时再同步一次（否则暗色下评论区会停在亮色）
-  const observer = new MutationObserver(() => {
-    if (document.querySelector('iframe.giscus-frame')) syncGiscusTheme();
+  window.addEventListener('load', () => {
+    attachToFrame();
+    syncWithRetry();
   });
-  observer.observe(document.body, { childList: true, subtree: true });
-  window.addEventListener('load', syncGiscusTheme);
+  attachToFrame();
 </script>
