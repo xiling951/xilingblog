@@ -469,3 +469,21 @@ html.wallpaper .float-panel {
 .comments-wrap { margin-top: 1rem; }
 
 html.wallpaper body { background-color: transparent; }
+
+/* ===== 尊重系统的“减少动态效果”设置 ===== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .onload-animation { animation: none !important; }
+  .card-hover:hover, .floating-btn:hover { transform: none; }
+}
+/* ===== 移动端/中屏目录（details 折叠） ===== */
+.toc-mobile summary { list-style: none; cursor: pointer; }
+.toc-mobile summary::-webkit-details-marker { display: none; }
+.toc-mobile summary::after { content: "▾"; margin-left: auto; font-size: 0.8rem; opacity: 0.7; }
+.toc-mobile[open] summary::after { content: "▴"; }
+.toc-mobile .widget-title { display: flex; align-items: center; gap: 0.4rem; }

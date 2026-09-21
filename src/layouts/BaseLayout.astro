@@ -31,6 +31,17 @@ const {
 } = Astro.props;
 
 const fullTitle = pageTitle ? `${pageTitle} | ${siteConfig.titleSuffix}` : siteConfig.titleSuffix;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
+const ogImage = new URL(withBase('/og.png'), Astro.site ?? Astro.url).toString();
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: siteConfig.title,
+  description: siteConfig.description,
+  url: canonicalURL.toString(),
+  inLanguage: siteConfig.lang,
+  author: { '@type': 'Person', name: siteConfig.author },
+};
 const bannerHeight = home ? siteConfig.banner.homeHeight : siteConfig.banner.pageHeight;
 const showBigTitle = home && siteConfig.banner.showTitle;
 ---
@@ -46,6 +57,30 @@ const showBigTitle = home && siteConfig.banner.showTitle;
     <meta name="description" content={description} />
     <meta name="author" content={siteConfig.author} />
     <title>{fullTitle}</title>
+    <link rel="canonical" href={canonicalURL} />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${siteConfig.title} | RSS`}
+      href={withBase('/rss.xml')}
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef2f9" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14181f" />
+
+    <!-- Open Graph / Twitter 分享卡片 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteConfig.title} />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <!-- 预涂主题与壁纸模式，避免刷新时闪烁 -->
     <script is:inline define:vars={{ defaultTheme: siteConfig.defaultTheme }}>

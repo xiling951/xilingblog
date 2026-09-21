@@ -24,7 +24,7 @@ import { Icon } from 'astro-icon/components';
         Esc
       </button>
     </div>
-    <p id="search-status" class="px-4 py-3 text-[0.8rem] text-meta">
+    <p id="search-status" role="status" aria-live="polite" class="px-4 py-3 text-[0.8rem] text-meta">
       输入关键词开始搜索（快捷键 Ctrl / ⌘ + K）
     </p>
     <div id="search-results" class="flex max-h-[60vh] flex-col gap-1 overflow-y-auto px-3 pb-3"></div>
@@ -33,21 +33,23 @@ import { Icon } from 'astro-icon/components';
 
 <script>
   const modal = document.getElementById('search-modal');
-  const input = document.getElementById('search-input') as HTMLInputElement | null;
+  const input = document.getElementById('search-input');
   const resultsEl = document.getElementById('search-results');
   const statusEl = document.getElementById('search-status');
-  const base = import.meta.env.BASE_URL;
+  // BASE_URL 可能是 '/xilingblog'（无结尾斜杠），统一规范成带斜杠再用
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
 
-  let pagefind: any = null;
-  let loading: Promise<any> | null = null;
-  let timer: number | undefined;
+  let pagefind = null;
+  let loading = null;
+  let timer;
+  let lastFocused = null;
 
   async function getPagefind() {
     if (pagefind) return pagefind;
     if (!loading) {
-      // Pagefind 的索引只在 `npm run build` 之后存在于 dist/pagefind/
+      // Pagefind 索引只在 `npm run build` 之后存在于 dist/pagefind/
       loading = import(/* @vite-ignore */ `${base}pagefind/pagefind.js`)
-        .then(async (mod: any) => {
+        .then(async (mod) => {
           await mod.options({ baseUrl: base });
           await mod.init();
           pagefind = mod;
@@ -61,68 +63,129 @@ import { Icon } from 'astro-icon/components';
     return loading;
   }
 
+  // 安全渲染 Pagefind 摘要：只接受文本与 <mark>，不把远端 HTML 直接注入页面
+  function renderExcerpt(target, excerptHtml) {
+    if (!excerptHtml) return;
+    const parsed = new DOMParser().parseFromString('<div>' + excerptHtml + '</div>', 'text/html');
+    const root = parsed.body.firstElementChild;
+    if (!root) return;
+    const copy = (node, out) => {
+      node.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          out.appendChild(document.createTextNode(child.textContent ?? ''));
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          if (child.tagName === 'MARK') {
+            const mark = document.createElement('mark');
+            mark.textContent = child.textContent ?? '';
+            out.appendChild(mark);
+          } else {
+            copy(child, out);
+          }
+        }
+      });
+    };
+    copy(root, target);
+  }
+
+  function focusableItems() {
+    if (!modal) return [];
+    return Array.from(modal.querySelectorAll('a[href], button, input')).filter(
+      (el) => el.offsetParent !== null
+    );
+  }
+
   function openSearch() {
+    lastFocused = document.activeElement;
     modal?.classList.add('open');
     input?.focus();
     input?.select();
   }
 
   function closeSearch() {
-    modal?.classList.remove('open');
+    if (!modal?.classList.contains('open')) return;
+    modal.classList.remove('open');
+    if (lastFocused instanceof HTMLElement) lastFocused.focus();
   }
 
-  document.querySelectorAll('.search-open').forEach((button) => {
-    button.addEventListener('click', openSearch);
-  });
-  document.querySelectorAll('[data-search-close]').forEach((button) => {
-    button.addEventListener('click', closeSearch);
-  });
+  document.querySelectorAll('.search-open').forEach((button) => button.addEventListener('click', openSearch));
+  document.querySelectorAll('[data-search-close]').forEach((button) => button.addEventListener('click', closeSearch));
+
   document.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
       openSearch();
+      return;
     }
-    if (event.key === 'Escape') closeSearch();
-    if (event.key === 'Enter' && modal?.classList.contains('open')) {
-      const first = resultsEl?.querySelector<HTMLAnchorElement>('a.search-result');
-      first?.click();
+    if (!modal?.classList.contains('open')) return;
+
+    if (event.key === 'Escape') {
+      closeSearch();
+      return;
+    }
+
+    // 焦点陷阱：Tab 在弹窗内循环
+    if (event.key === 'Tab') {
+      const items = focusableItems();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      }
+      return;
+    }
+
+    // 回车只在输入框里生效，避免误触第一条结果
+    if (event.key === 'Enter' && document.activeElement === input) {
+      const firstResult = resultsEl?.querySelector('a.search-result');
+      if (firstResult) {
+        event.preventDefault();
+        firstResult.click();
+      }
     }
   });
 
-  async function runSearch(query: string) {
+  async function runSearch(query) {
     if (!resultsEl || !statusEl) return;
+    resultsEl.replaceChildren();
     if (!query.trim()) {
-      resultsEl.innerHTML = '';
       statusEl.textContent = '输入关键词开始搜索（快捷键 Ctrl / ⌘ + K）';
       return;
     }
 
-    let pf: any;
+    let pf;
     try {
       statusEl.textContent = '正在搜索…';
       pf = await getPagefind();
     } catch {
-      resultsEl.innerHTML = '';
       statusEl.textContent =
-        '搜索索引还没生成：本地请先 `npm run build` 再 `npm run preview`；线上（构建产物）会自动带上索引。';
+        '搜索索引还没生成：本地请先 npm run build 再 npm run preview；线上会自动带上索引。';
       return;
     }
 
     const search = await pf.search(query);
-    const items = await Promise.all(search.results.slice(0, 8).map((r: any) => r.data()));
-    resultsEl.innerHTML = '';
+    const items = await Promise.all(search.results.slice(0, 8).map((result) => result.data()));
     statusEl.textContent = items.length ? `找到 ${search.results.length} 条结果` : '没有找到相关内容';
 
     for (const item of items) {
       const link = document.createElement('a');
       link.className = 'search-result';
       link.href = item.url;
-      link.innerHTML = `
-        <div class="flex items-center gap-1.5">
-          <span class="text-[0.92rem] font-semibold">${item.meta?.title ?? item.url}</span>
-        </div>
-        <p class="mt-1 line-clamp-2 text-[0.8rem] leading-relaxed text-meta">${item.excerpt ?? ''}</p>
-      `;
+
+      const title = document.createElement('div');
+      title.className = 'text-[0.92rem] font-semibold';
+      title.textContent = item.meta?.title ?? item.url;
+      link.appendChild(title);
+
+      const excerpt = document.createElement('p');
+      excerpt.className = 'mt-1 line-clamp-2 text-[0.8rem] leading-relaxed text-meta';
+      renderExcerpt(excerpt, item.excerpt);
+      link.appendChild(excerpt);
+
       resultsEl.appendChild(link);
     }
   }

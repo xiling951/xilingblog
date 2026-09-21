@@ -3,7 +3,8 @@ import { Icon } from 'astro-icon/components';
 import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
 import Comments from '../components/Comments.astro';
-import { formatDate, posts } from '../utils/posts';
+import { siteConfig } from '../config';
+import { formatDate, posts, relatedPosts } from '../utils/posts';
 import { withBase } from '../utils/url';
 
 const { frontmatter, headings, url } = Astro.props as {
@@ -17,7 +18,8 @@ const index = posts.findIndex((post) => post.url === url);
 const newer = index > 0 ? posts[index - 1] : undefined;
 const older = index >= 0 && index < posts.length - 1 ? posts[index + 1] : undefined;
 
-const toc = (headings ?? []).filter((heading) => heading.depth === 2 || heading.depth === 3);
+const toc = (headings ?? []).filter((heading) => heading.depth >= 2 && heading.depth <= 4);
+const related = current ? relatedPosts(current, 3) : [];
 ---
 
 <BaseLayout
@@ -35,6 +37,14 @@ const toc = (headings ?? []).filter((heading) => heading.depth === 2 || heading.
           <Icon name="material-symbols:calendar-today-rounded" class="text-[1rem]" />
           {formatDate(new Date(frontmatter.pubDate))}
         </span>
+        {
+          frontmatter.updatedDate && (
+            <span class="inline-flex items-center gap-1">
+              <Icon name="material-symbols:history-rounded" class="text-[1rem]" />
+              更新于 {formatDate(new Date(frontmatter.updatedDate))}
+            </span>
+          )
+        }
         {
           frontmatter.category && (
             <span class="inline-flex items-center gap-1">
@@ -75,6 +85,28 @@ const toc = (headings ?? []).filter((heading) => heading.depth === 2 || heading.
       }
     </header>
 
+    {
+      toc.length > 0 && (
+        <details class="toc-mobile card mt-4 p-3 lg:hidden">
+          <summary class="widget-title text-primary">
+            <Icon name="material-symbols:toc-rounded" class="text-[1.15rem]" />
+            目录
+          </summary>
+          <nav class="mt-2 flex flex-col gap-0.5">
+            {toc.map((heading) => (
+              <a
+                href={`#${heading.slug}`}
+                class="toc-link"
+                style={`padding-left:${(heading.depth - 2) * 0.75 + 0.5}rem`}
+              >
+                {heading.text}
+              </a>
+            ))}
+          </nav>
+        </details>
+      )
+    }
+
     <div class="prose mt-6 max-w-none">
       <slot />
     </div>
@@ -89,6 +121,30 @@ const toc = (headings ?? []).filter((heading) => heading.depth === 2 || heading.
             loading="lazy"
           />
         </figure>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="mt-8 border-t border-divider pt-4">
+          <div class="widget-title text-primary">
+            <Icon name="material-symbols:article-rounded" class="text-[1.15rem]" />
+            相关文章
+          </div>
+          <ul class="mt-3 flex flex-col gap-1.5">
+            {related.map((post) => (
+              <li>
+                <a
+                  href={withBase(post.url)}
+                  class="btn-plain inline-flex items-center gap-2 px-2 py-1.5 text-[0.88rem]"
+                >
+                  <Icon name="material-symbols:article-outline-rounded" class="text-[1rem] text-primary" />
+                  {post.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )
     }
 
@@ -120,7 +176,24 @@ const toc = (headings ?? []).filter((heading) => heading.depth === 2 || heading.
     </footer>
   </article>
 
-  <Comments />`n`n  <Fragment slot="right">
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: frontmatter.title,
+      description: frontmatter.description,
+      datePublished: new Date(frontmatter.pubDate).toISOString(),
+      author: { '@type': 'Person', name: frontmatter.author ?? siteConfig.author },
+      keywords: (frontmatter.tags ?? []).join(', '),
+      inLanguage: siteConfig.lang,
+      mainEntityOfPage: new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString(),
+    })}
+  />
+
+  <Comments />
+
+  <Fragment slot="right">
     {
       toc.length > 0 && (
         <div class="card mb-4 p-4">
@@ -146,22 +219,33 @@ const toc = (headings ?? []).filter((heading) => heading.depth === 2 || heading.
 </BaseLayout>
 
 <script>
-  // 目录滚动高亮
-  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('#toc .toc-link'));
+  // 目录滚动高亮（rAF 节流，减少重排）
+  const links = Array.from(document.querySelectorAll('#toc .toc-link'));
   const targets = links
     .map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1))))
-    .filter((el): el is HTMLElement => Boolean(el));
+    .filter((el) => Boolean(el));
 
   if (targets.length > 0) {
-    const highlight = () => {
-      const offset = 96;
-      let activeIndex = 0;
+    let activeIndex = -1;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const threshold = window.innerHeight * 0.2 + 60;
+      let candidate = 0;
       targets.forEach((target, index) => {
-        if (target.getBoundingClientRect().top <= offset) activeIndex = index;
+        if (target.getBoundingClientRect().top <= threshold) candidate = index;
       });
+      if (candidate === activeIndex) return;
+      activeIndex = candidate;
       links.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
     };
-    highlight();
-    document.addEventListener('scroll', highlight, { passive: true });
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+    update();
+    document.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
   }
 </script>

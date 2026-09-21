@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import icon from 'astro-icon';
 import expressiveCode from 'astro-expressive-code';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
+import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
@@ -18,6 +19,7 @@ export default defineConfig({
 
   integrations: [
     icon(),
+    sitemap(),
     expressiveCode({
       // 跟随站点的 .dark class（而不是系统的 prefers-color-scheme）
       themes: ['github-light-default', 'github-dark-default'],

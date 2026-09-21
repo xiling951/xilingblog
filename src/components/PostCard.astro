@@ -64,6 +64,8 @@ const { post } = Astro.props;
         <img
           src={post.image.url}
           alt={post.image.alt}
+          width="128"
+          height="96"
           loading="lazy"
           class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />

@@ -2,11 +2,12 @@
 import Pagination from '../../components/Pagination.astro';
 import PostList from '../../components/PostList.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig } from '../../config';
 import { posts } from '../../utils/posts';
 
 export async function getStaticPaths({ paginate }) {
-  // note: getStaticPaths is hoisted into its own scope, so no outer constants here
-  return paginate(posts, { pageSize: 4 });
+  // 注意：getStaticPaths 会被提升到独立作用域，不能用本文件里定义的外层常量（用 import 进来的配置没问题）
+  return paginate(posts, { pageSize: siteConfig.postsPerPage });
 }
 
 const { page } = Astro.props;

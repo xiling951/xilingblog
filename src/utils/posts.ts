@@ -16,6 +16,8 @@ export interface Post {
   category: string;
   tags: string[];
   pubDate: Date;
+  /** 可选：更新时间 */
+  updatedDate?: Date;
   image?: { url: string; alt: string };
   /** 字数（中文按字、西文按词） */
   words: number;
@@ -54,6 +56,7 @@ export const posts: Post[] = Object.entries(modules)
       category: m.frontmatter?.category ?? '未分类',
       tags: (m.frontmatter?.tags ?? []) as string[],
       pubDate: new Date(m.frontmatter?.pubDate ?? 0),
+      updatedDate: m.frontmatter?.updatedDate ? new Date(m.frontmatter.updatedDate) : undefined,
       image: m.frontmatter?.image,
       words,
       minutes: Math.max(1, Math.round(words / 400)),
@@ -110,4 +113,20 @@ export function relativeDays(date: Date): string {
   const months = Math.floor(days / 30);
   if (months < 12) return `${months} 个月前`;
   return `${Math.floor(months / 12)} 年前`;
+}
+
+/** 取相关文章：同标签越多越相关，其次同分类，最后按时间新到旧 */
+export function relatedPosts(current: Post, limit = 3): Post[] {
+  return posts
+    .filter((post) => post.url !== current.url)
+    .map((post) => ({
+      post,
+      score:
+        post.tags.filter((tag) => current.tags.includes(tag)).length +
+        (post.category === current.category ? 1 : 0),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || b.post.pubDate.valueOf() - a.post.pubDate.valueOf())
+    .slice(0, limit)
+    .map((entry) => entry.post);
 }

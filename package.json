@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
     "@iconify-json/material-symbols": "^1.2.92",
     "@iconify-json/simple-icons": "^1.2.97",
     "@tailwindcss/typography": "^0.5.20",

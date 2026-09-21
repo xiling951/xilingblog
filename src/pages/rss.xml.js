@@ -1,15 +1,17 @@
 import rss, { pagesGlobToRssItems } from '@astrojs/rss';
-import { withBase } from '../utils/url';
+import { siteConfig } from '../config';
 
 export async function GET(context) {
+  // 站点部署在子路径（/xilingblog/）下，这里有两个坑：
+  // 1) pagesGlobToRssItems 返回的 item 链接已经包含 base，不能再拼一次（否则 /xilingblog/xilingblog/...）
+  // 2) channel 的 link 必须带 base，否则订阅者会被带到域名根目录
+  const siteWithBase = new URL(import.meta.env.BASE_URL, context.site);
+
   return rss({
-    title: '我的Astro站点 | 博客',
-    description: '我的课程笔记、学习日记和折腾记录',
-    site: context.site,
-    items: (await pagesGlobToRssItems(import.meta.glob('./**/*.md'))).map((item) => ({
-      ...item,
-      link: withBase(String(item.link)),
-    })),
+    title: `${siteConfig.title} | 博客`,
+    description: siteConfig.description,
+    site: siteWithBase,
+    items: await pagesGlobToRssItems(import.meta.glob('./**/*.md')),
     customData: `<language>zh-cn</language>`,
   });
 }
