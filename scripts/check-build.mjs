@@ -62,6 +62,14 @@ for (const file of htmlFiles) {
   }
 }
 
+// 文章页的字数统计不能是 0（曾经因为用 fs 读源码在 CI 上失效而全站变成 0）
+const postPages = htmlFiles.filter((file) => relative(DIST, file).startsWith('posts'));
+for (const file of postPages) {
+  const html = readFileSync(file, 'utf8');
+  const match = html.match(/(\d+) 字 · 约/);
+  if (!match) problems.push(`文章页缺少字数信息: ${relative(DIST, file)}`);
+  else if (Number(match[1]) === 0) problems.push(`文章页字数为 0（字数统计失效）: ${relative(DIST, file)}`);
+}
 if (existsSync(join(DIST, 'rss.xml'))) {
   const rss = readFileSync(join(DIST, 'rss.xml'), 'utf8');
   if (rss.includes('xilingblog/xilingblog')) problems.push('rss.xml 里 base 被重复拼接');

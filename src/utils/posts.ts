@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import { withoutBase } from './url';
 
 /**
@@ -35,19 +34,18 @@ function countWords(markdown: string): number {
 }
 
 const modules = import.meta.glob('../pages/posts/*.md', { eager: true });
-
-function readSource(key: string): string {
-  try {
-    return fs.readFileSync(new URL(key, import.meta.url), 'utf8');
-  } catch {
-    return '';
-  }
-}
+// 用 Vite 的 ?raw 直接拿到 Markdown 原文做字数统计：
+// 之前用 fs.readFileSync(new URL(key, import.meta.url)) 在 GitHub runner 上路径解析失败，导致线上总字数变成 0
+const rawModules = import.meta.glob('../pages/posts/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
 
 export const posts: Post[] = Object.entries(modules)
   .map(([key, mod]) => {
     const m = mod as any;
-    const words = countWords(readSource(key));
+    const words = countWords(rawModules[key] ?? '');
     return {
       url: withoutBase(m.url as string),
       file: key.split('/').pop() ?? key,
