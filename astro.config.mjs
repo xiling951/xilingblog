@@ -6,6 +6,14 @@ import expressiveCode from 'astro-expressive-code';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 import sitemap from '@astrojs/sitemap';
 
+import { readdirSync, readFileSync } from 'node:fs';
+
+// 构建期扫描 frontmatter，把草稿从 sitemap 里排除（草稿只应自己可见）
+const POSTS_DIR = 'src/pages/posts';
+const draftSlugs = readdirSync(POSTS_DIR)
+  .filter((file) => file.endsWith('.md'))
+  .filter((file) => /^draft:\s*true\s*$/m.test(readFileSync(`${POSTS_DIR}/${file}`, 'utf8')))
+  .map((file) => file.replace(/\.md$/, ''));
 // https://astro.build/config
 export default defineConfig({
   // GitHub Pages 项目页地址：https://xiling951.github.io/xilingblog/
@@ -19,7 +27,9 @@ export default defineConfig({
 
   integrations: [
     icon(),
-    sitemap(),
+    sitemap({
+      filter: (page) => !draftSlugs.some((slug) => page.includes(/posts/${slug}/)),
+    }),
     expressiveCode({
       // 跟随站点的 .dark class（而不是系统的 prefers-color-scheme）
       themes: ['github-light-default', 'github-dark-default'],

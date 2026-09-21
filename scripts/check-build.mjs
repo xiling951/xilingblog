@@ -93,6 +93,15 @@ if (existsSync(join(DIST, 'rss.xml'))) {
   if (!rss.includes(BASE)) problems.push('rss.xml 的链接缺少 base');
 }
 
+// 草稿不应出现在 sitemap 里（sitemap-0.xml 里的每个 loc 都必须是"已发布"页面）
+for (const file of ['sitemap-0.xml', 'sitemap-index.xml']) {
+  const path = join(DIST, file);
+  if (!existsSync(path)) continue;
+  const xml = readFileSync(path, 'utf8');
+  for (const slug of ['digital-ic-design']) {
+    if (xml.includes(`/posts/${slug}/`)) problems.push(`sitemap 不应包含草稿: /posts/${slug}/（${file}）`);
+  }
+}
 if (existsSync(join(DIST, 'robots.txt'))) {
   const robots = readFileSync(join(DIST, 'robots.txt'), 'utf8');
   if (!robots.includes(`${BASE}sitemap-index.xml`)) problems.push('robots.txt 的 Sitemap 地址不正确');

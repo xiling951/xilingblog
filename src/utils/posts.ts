@@ -16,6 +16,8 @@ export interface Post {
   category: string;
   tags: string[];
   pubDate: Date;
+  /** 草稿：draft: true 时不进归档/标签/分类/RSS/搜索索引 */
+  draft?: boolean;
   /** 可选：更新时间 */
   updatedDate?: Date;
   image?: { url: string; alt: string };
@@ -42,7 +44,7 @@ const rawModules = import.meta.glob('../pages/posts/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-export const posts: Post[] = Object.entries(modules)
+const allPosts: Post[] = Object.entries(modules)
   .map(([key, mod]) => {
     const m = mod as any;
     const words = countWords(rawModules[key] ?? '');
@@ -56,12 +58,19 @@ export const posts: Post[] = Object.entries(modules)
       tags: (m.frontmatter?.tags ?? []) as string[],
       pubDate: new Date(m.frontmatter?.pubDate ?? 0),
       updatedDate: m.frontmatter?.updatedDate ? new Date(m.frontmatter.updatedDate) : undefined,
+      draft: Boolean(m.frontmatter?.draft),
       image: m.frontmatter?.image,
       words,
       minutes: Math.max(1, Math.round(words / 400)),
     };
   })
   .sort((a, b) => b.pubDate.valueOf() - a.pubDate.valueOf());
+
+/** 全部文章（含草稿）——文章页找自己、以及需要"含草稿"的场景用 */
+export { allPosts };
+
+/** 只含已发布的文章：渲染列表、标签、分类、统计、相关阅读都用它 */
+export const posts: Post[] = allPosts.filter((post) => !post.draft);
 
 export const tagCounts: { name: string; count: number }[] = Object.entries(
   posts.reduce<Record<string, number>>((acc, post) => {

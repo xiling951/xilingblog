@@ -4,7 +4,7 @@ import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
 import Comments from '../components/Comments.astro';
 import { siteConfig } from '../config';
-import { formatDate, posts, relatedPosts } from '../utils/posts';
+import { allPosts, formatDate, posts, relatedPosts } from '../utils/posts';
 import { withBase, withoutBase } from '../utils/url';
 
 const { frontmatter, headings, url } = Astro.props as {
@@ -13,7 +13,7 @@ const { frontmatter, headings, url } = Astro.props as {
   url: string;
 };
 
-const current = posts.find((post) => post.url === withoutBase(url));
+const current = allPosts.find((post) => post.url === withoutBase(url));
 const index = posts.findIndex((post) => post.url === withoutBase(url));
 const newer = index > 0 ? posts[index - 1] : undefined;
 const older = index >= 0 && index < posts.length - 1 ? posts[index + 1] : undefined;
@@ -29,7 +29,7 @@ const related = current ? relatedPosts(current, 3) : [];
   bannerSubtitle={frontmatter.description}
   type="article"
 >
-  <article class="card p-5 md:p-7" data-pagefind-body>
+  <article class="card p-5 md:p-7" {...(frontmatter.draft ? { 'data-pagefind-ignore': '' } : { 'data-pagefind-body': '' })}>
     <header class="border-b border-divider pb-4">
       <h1 class="text-[1.45rem] font-bold leading-snug md:text-[1.8rem]">{frontmatter.title}</h1>
 
@@ -71,6 +71,15 @@ const related = current ? relatedPosts(current, 3) : [];
           )
         }
       </div>
+
+      {
+        frontmatter.draft && (
+          <p class="mt-3 flex items-start gap-1.5 rounded-lg bg-btn px-2.5 py-2 text-[0.78rem] text-btn-content">
+            <Icon name="material-symbols:edit-note-rounded" class="mt-0.5 shrink-0 text-[1rem]" />
+            <span>草稿：不会出现在归档 / 标签 / RSS / 搜索里；把 frontmatter 的 <code>draft</code> 改成 false 就发布。</span>
+          </p>
+        )
+      }
 
       {
         frontmatter.tags?.length > 0 && (
