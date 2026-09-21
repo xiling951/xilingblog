@@ -223,3 +223,52 @@ chrome --headless=new --remote-debugging-port=9226 --user-data-dir=<tmp2> about:
 chrome --headless=new --remote-debugging-port=9227 --user-data-dir=<tmp3> about:blank   # 会话③：重跑五阶段脚本 → 0 条
 # 关键断言：Log.entryAdded 中 /postMessage|target origin/ 计数；iframe.dataset.themeReady；活帧 .gsc-comment-box 背景色
 ```
+
+---
+
+## 七、终验：giscus 警告归零（确定性就绪判据 `5d85afa`，run #11）
+
+- **被复验版本**：`5d85afa`「fix(giscus): 用确定性就绪判据替代 1200ms 盲兜底，彻底消除 targetOrigin 警告」= GitHub Actions run #11（`conclusion = success`）→ 线上即该提交
+- **就绪判据（源码=线上产物）**：`frameReady(frame)` = `try { frame.contentWindow.location.origin === 'https://giscus.app' } catch { true }`；`sendTheme()` 以 `frameReady` 为前置条件；**已删除 1200ms 盲兜底**，改为 `syncWithRetry` 400ms × 25（≈10s）轮询到就绪；`themeReady` 仍在 `load` 回调里置位（仅作外部可观测标记）
+- **方法**：与 t5 完全同一套脚本（无头 Chrome + CDP、`Network.setCacheDisabled` + `clearBrowserCache`、父页发 nonce 定位活着的 giscus OOPIF、按阶段统计 `Log.entryAdded` 中 `/postMessage|target origin/`），**3 次独立全新 profile 会话**（端口 9228 / 9229 / 9230），另加 1 次带 document-start 时间线注入的诊断会话（端口 9231）
+
+### 7.1 逐条结果
+
+| # | 复验点 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| 1 | 三次会话的 targetOrigin 警告计数均为 0（冷加载 / 切换主题 / 再次冷加载） | **PASS** | 会话①(9228)：stage0=0、A(首次冷加载)=0、B/C(切换)=0/0、D(再次冷加载) 时间线 t1.2s/t2.4s/t6.4s=0/0/0、D_state=0、E=0，**合计 0**；会话②(9229)：各阶段同样 0，合计 0；会话③(9230)：各阶段同样 0，合计 0。3 次会话 `exceptions=[]`，`Log.entryAdded` 中无任何 `postMessage`/`target origin`/`DOMWindow` 记录 |
+| 2 | 站点暗色冷加载后活帧 widget 仍为 dark（就绪判据未挡主题），themeReady 时序正常 | **PASS** | 3/3 会话的 D 阶段（`localStorage.theme=dark` 冷加载 + 滚动等懒加载）：`html.class="dark"`、`iframe.dataset.themeReady="1"`、活帧 `.gsc-comment-box` 背景 `rgb(13, 17, 23)`、textarea 文字 `rgb(230, 237, 243)`。时序（会话①）：`D_t1_2 ready=1`、`D_t2_4 ready=1`、`D_t6_4 ready=1`（会话③ t1.2s 时 ready 尚为 null、t2.4s 起为 1 —— 说明就绪是靠判据而非盲等）。诊断会话（9231，document-start 注入时间线）实测：iframe 插入 **t=987ms**（此时 `contentWindow.location.origin` 为 `null`，未提交）→ **t=2249ms** 变为跨域可读（判据自此为 true）→ **t=3422ms** `load` 触发（判据已 true、`themeReady` 仍 null，随后置 1）——证明「就绪」判定确实发生在导航提交之后 |
+| 3 | 点击主题开关评论区仍跟随 light→dark→light | **PASS** | 3/3 会话：会话②(9229) 完整序列 A=light(`rgb(255,255,255)`) → 点开关(site=dark) → B=dark(`rgb(13,17,23)`) → 再点(site 无 class) → C=light；D(暗色冷加载)=dark → E(点开关)=light。会话①/③ 的 B/C/D/E 同形（B=dark、C=light、D=dark、E=light）。帧内实收消息 `{"giscus":{"setConfig":{}}}`（`origin=https://xiling951.github.io`，`theme` 键已被 giscus handler 消费），且只在切换后出现（B/E 各 1 条） |
+| 4 | 结论追加本报告 | **PASS** | 即本节 |
+
+### 7.2 结论（R1 / R2）
+
+- **R2 已闭合**：`5d85afa` 采用确定性就绪判据后，**3 次独立全新 profile 会话的 targetOrigin 警告全部为 0**（冷加载 / 切换主题 / 再次冷加载各阶段均为 0），`exceptions` 亦为 0。对比 `097a240`（每次加载 1 条）与 `cf6b2e0`（3 次会话 1/0/0）已彻底消除。
+- **R1 已闭合（本任务验收的两条路径）**：暗色冷加载 → 评论区 dark；点击主题开关 → 评论区随之 light↔dark 切换；3/3 会话一致，就绪判据未破坏主题同步。
+
+### 7.3 新发现 R3（medium/low，不影响 7.2 的两条结论）：首次「浅色冷加载」时评论区可能停留在系统主题
+
+- **现象**：站点为浅色（`localStorage.theme='light'`，`html` 无 `dark`）而系统偏好为深色时，评论 iframe 加载完成后 widget **仍是暗色**（`rgb(13,17,23)`），直到用户点一次主题开关才跟随站点。
+- **复现率**：3 次会话中 2 次复现（会话① 9228、会话③ 9230 的 A 阶段 widget=dark；会话② 9229 的 A 阶段为 light，正常），诊断会话（9231）稳定复现。
+- **证据链**（用于排除「判据提前发送」这一旧根因）：
+  1. 诊断时间线：iframe 插入(`t=987ms`，origin 为 `null`) → 跨域就绪(`t=2249ms`) → `load`(`t=3422ms`)，即发送时机已晚于导航提交，**不是** targetOrigin 被丢弃（且 0 警告、无异常）；
+  2. `themeReady="1"` 说明 `load` 回调确实执行并调用了 `sendTheme()`；
+  3. 在同一页手工补发**完全相同**的 `{giscus:{setConfig:{theme:'light'}}}`（`targetOrigin` 同为 `https://giscus.app`）→ 2.5s 内 widget 变为 `rgb(255,255,255)`（light）✓；
+  4. 切换路径（B/C/E 阶段）每次都能正确生效。
+  由 3、4 可判定：消息通道正常，问题在于**首次发送早于 giscus 应用自己的初始主题**（`theme=preferred_color_scheme`）→ 我们的 `light` 被 widget 的初始渲染覆盖；用户切换一次主题（更晚的发送）即恢复。
+- **影响**：仅影响「手动把站点主题切到与系统相反」的回头访客（`defaultTheme='auto'` 时两者一致，多数场景无感）；表现为评论区与页面主题不一致，切换一次主题即自愈。
+- **修复建议（任选；因发送前仍有 `frameReady()` 判据，不会重新引入警告）**：
+  1. **改用 giscus 自己的就绪信号**：父页 `window.addEventListener('message', (e) => { if (e.origin === 'https://giscus.app') sendTheme(); })`——giscus widget 渲染后会向父页发 `resizeHeight`（客户端已用它设置 iframe 高度），这条消息是「widget 已渲染」的现成信号，此时补发必然生效；
+  2. 或在 `load` 回调里多发几次：`sendTheme(); setTimeout(sendTheme, 800); setTimeout(sendTheme, 2500);`（判据保证不会提前发送）；
+  3. 或按当前主题直出 iframe 的初始 `data-theme`（客户端按 `class/localStorage` 注入 `client.js` 的 `data-theme="dark|light"`），从根上避免「先 preferred_color_scheme 再纠正」。
+
+### 7.4 复现命令（本节，四次会话）
+
+```powershell
+# 三次验收会话（与 t5 同一脚本，仅端口不同；各自全新 profile）
+chrome --headless=new --remote-debugging-port=9228 --user-data-dir=<tmp1> about:blank  # 会话①：全阶段 0 警告；A 阶段 widget=dark（R3）
+chrome --headless=new --remote-debugging-port=9229 --user-data-dir=<tmp2> about:blank  # 会话②：全阶段 0 警告；A 阶段 widget=light（正常）
+chrome --headless=new --remote-debugging-port=9230 --user-data-dir=<tmp3> about:blank  # 会话③：全阶段 0 警告；A 阶段 widget=dark（R3）
+# 诊断会话：document-start 注入时间线 + 手工补发 setConfig，验证 R3 机制
+chrome --headless=new --remote-debugging-port=9231 --user-data-dir=<tmp4> about:blank  # 插入 987ms(origin=null) → 就绪 2249ms → load 3422ms；补发 light 后 widget 变 light
+```

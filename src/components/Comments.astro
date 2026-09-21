@@ -46,9 +46,8 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
   const GISCUS_ORIGIN = 'https://giscus.app';
   const desiredTheme = () => (root.classList.contains('dark') ? 'dark' : 'light');
 
-  // 就绪判据（确定性，不靠定时器猜）：
-  // 导航未提交时 iframe 文档是 about:blank，与父页同源 → 能读到 location.origin（= 父页 origin）→ 未就绪；
-  // 已导航到 giscus.app 后是跨域 → 读 location 会抛异常 → 视为已就绪。
+  // 就绪判据（确定性）：导航未提交时 iframe 是 about:blank（同源，能读到 location.origin=父页）→ 未就绪；
+  // 已导航到 giscus.app（跨域，读取 location 抛异常）→ 就绪。
   const frameReady = (frame) => {
     try {
       return frame.contentWindow?.location.origin === GISCUS_ORIGIN;
@@ -64,7 +63,7 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
     return true;
   };
 
-  // 轮询到就绪为止：400ms × 25 ≈ 10s，足够覆盖懒加载与慢网络；因为判据确定，绝不会提前发送
+  // 轮询到就绪为止（400ms × 25 ≈ 10s）；判据确定，绝不会提前发送
   const syncWithRetry = (attempt = 0) => {
     if (sendTheme()) return;
     if (attempt < 25) window.setTimeout(() => syncWithRetry(attempt + 1), 400);
@@ -75,7 +74,6 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
     if (!frame) return false;
     if (frame.dataset.themeHooked === '1') return true;
     frame.dataset.themeHooked = '1';
-    // themeReady 只作为外部可观测的标记（load 必在导航提交之后触发）
     frame.addEventListener('load', () => {
       frame.dataset.themeReady = '1';
       sendTheme();
@@ -83,11 +81,25 @@ const enabled = comments.enable && comments.repoId && comments.categoryId;
     return true;
   };
 
+  // giscus 渲染完成后会向父页 postMessage（resizeHeight 等）。
+  // 那才是「它已经应用过自己的初始主题」的信号：此时再发一次 setConfig 才不会被覆盖
+  // （否则浅色站点 + 深色系统时，首次冷加载可能停在暗色，要点一次开关才正常）。
+  let greeted = false;
+  window.addEventListener('message', (event) => {
+    if (event.origin !== GISCUS_ORIGIN) return;
+    sendTheme();
+    if (!greeted) {
+      greeted = true;
+      window.setTimeout(sendTheme, 600);
+      window.setTimeout(sendTheme, 2000);
+    }
+  });
+
   new MutationObserver(() => {
     attachToFrame();
   }).observe(document.body, { childList: true, subtree: true });
 
-  // 站点明暗切换时同步（帧未就绪则由重试兜住）
+  // 站点明暗切换时同步（帧未就绪由重试兜住）
   new MutationObserver(syncWithRetry).observe(root, {
     attributes: true,
     attributeFilter: ['class'],
