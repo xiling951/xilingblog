@@ -7,13 +7,13 @@
 
 export const siteConfig = {
   /** 站点名 / 首页大标题 */
-  title: '西岭的博客',
+  title: '西岭小站',
   /** 首页副标题（显示在标题下方） */
   subtitle: '把课程笔记、学习日记和折腾记录都放在这里',
   /** 浏览器标签页标题后缀 */
-  titleSuffix: '西岭的博客',
+  titleSuffix: '西岭小站',
   /** 描述（SEO / RSS） */
-  description: '西岭的个人博客：课程笔记、学习日记和折腾记录',
+  description: '西岭小站：课程笔记、学习日记和折腾记录',
   /** 主题色相（0-360）—— 整个站点的配色都由它推导 */
   themeHue: 240,
   /** 默认配色模式：'auto' | 'light' | 'dark' */
